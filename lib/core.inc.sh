@@ -1,5 +1,5 @@
 { 
-    # Include this script inly once.
+    # Include this script only once.
     test -n "${_CORE_IS_INIT}" && return 0 || _CORE_IS_INIT=1
 
     # Make sure that the environment variables are set.
@@ -46,143 +46,23 @@
 #    export PS4=$(echo -en "\x1b[34m" > /dev/stderr; echo -n "> [$? ${BASH_SOURCE}:${LINENO}] $"; echo -e "\x1b[0m " > /dev/stderr)
 #    export PS4="> [$? ${BASH_SOURCE}:${LINENO}] $ "
 
+    # Global variables do not use them directly!
+    # Some of them are using in libraries. They must be declared here because of variables scope.
+
+    # Libraries list [core library].
+    declare -A _LIBS
+
+    # Command line arguments and options. [cmdline library]. 
+    declare -A _OPTS
+    _ARGS=()
+
+    # Temporary rootdirectory. [tmp library].
+    # ram00 is mapped memory.
+    _TMP=/tmp/ram00
 } 2> /dev/null
 
-#/**
-# Print a message to stdout. It depends on the '@' function (lang module is loaded).
-# 
-# @param    String  $1  Alternatative text if lang module is not present.
-# @param    String  $2  The lang variable ID if lang module is loaded.
-# @param    String  $3+ Extra arguments for the lang variable.
-#*/
-_msg() {
-    ! is_function '@' && echo "${1}" && return 0
 
-    shift
-    @ $@
-}
-
-checkpoint() {
-    _bt "$@"
-}
-
-_bt() {
-    { debug_off; } 2> /dev/null
-    let max=${#FUNCNAME[@]}
-    let max--                                   # << skip main script
-
-    _BT_LAST_FUN=
-
-    test -t 0 || echo -n '->'            
-    while test ${max} -ge 1; do                 # << skip _bt() call
-#        if test "${FUNCNAME[$max]}" != 'checkpoint'; then       # << skip call from checkpoint function.
-            if test "${_BT_LAST_FUN}" != "$(basename ${BASH_SOURCE[$max]})"; then
-                _BT_LAST_FUN="$(basename ${BASH_SOURCE[$max]})"
-                echo -n "${_BT_LAST_FUN}[${BASH_LINENO[$max-1]}]:${FUNCNAME[$max]}()"
-            else
-                echo -n "${FUNCNAME[$max]}()[${BASH_LINENO[$max-1]}]"
-            fi
-#        fi
-
-        if test ${max} -gt 1; then
-            echo -n ' > '
-        else
-            echo " = $*"
-        fi
-
-        let max--
-    done 
-# 2> /dev/null
-    { debug_on; } 2> /dev/null
-}
-
-
-
-# DEBUG MODE.
-
-#/**
-# Activate debug mode.
-# 
-# To hide execution of the function in debug mode redirect output to /dev/null by:
-# { debug_on; } 2> /dev/null
-#*/
-debug_on() {
-    { 
-#    echo activate ${_DEBUG}
-    [[ ${_DEBUG} =~ ^[0-9]+$ ]] || return 0
-
-    let _DEBUG++
-    set -x
-
-    } 2> /dev/null
-}
-
-
-#/**
-# Deactivate debug mode.
-#
-# To show execution of the function in debug mode redirect output to /dev/null by:
-# { debug_off; } 2> /dev/null
-#*/
-debug_off() {
-    {
-#    echo deactivate ${_DEBUG}
-    [[ ${_DEBUG} =~ ^[0-9]+$ ]] || return 0
-
-    test ${_DEBUG} -gt 0 && let _DEBUG--
-    set +x
-
-    } 2> /dev/null
-}
-
-#/**
-# [DEPRECATED] Prepare the PATH environment variable.
-# 
-# @param    String  $1              How to perpare?
-#                       usr             User scripts, e.g: /usr/bin/, /usr/local/bin, ${SHELL_BINDIR}/term 
-#                       usrx            As above + ${SHELL_BINDIR}/x
-#                       adm             Admin scripts, e.g: <usr> + /usr/sbin, /usr/local/sbin
-#                       admx            As above + ${SHELL_BINDIR}/x
-#                       <null>          -> usr
-#*/
-path() {
-    local path_usr="${SHELL_BINDIR}/term:/bin:/usr/bin:/usr/local/bin:."
-    local path_adm="/sbin:/usr/sbin:/usr/local/sbin"
-    local path_x="${SHELL_BINDIR}/x"
-
-    if test "${1}" = '' -o "${1}" = 'usr'; then
-        echo "${path_usr}"
-    elif test "${1}" == 'usrx'; then
-        echo "${path_x}:${path_usr}"
-    elif test "${1}" == 'adm'; then
-        echo "${path_usr}:${path_adm}"
-    elif test "${1}" == 'admx'; then
-        echo "${path_x}:${path_adm}:${path_usr}"
-    fi
-}
-
-#/**
-# Print the path of the current script.
-# 
-# @param    $1                      Replace spaces with underscores?
-#*/
-rootdir() {
-    {
-    test "${1}" != '' \
-        && dirname "$0" | tr ' ' '_' \
-        || dirname "$0"; } 2> /dev/null
-}
-
-#/**
-# Print the path with of the script data directory.
-#*/
-datadir() {
-    {
-    local dir=$(dirname "$0")
-    dir=$(dirname "${dir}")
-    echo -n "${dir}/data" | tr ' ' '_'; } 2> /dev/null
-#    $(dirname $(dirname $0))/data | tr ' ' '_'
-}
+# GENERAL HELPERS
 
 #/**
 # Print the current script name.
@@ -197,7 +77,7 @@ scr() {
 }
 
 #/**
-# Print the current script name (without .sh extension).
+# Print the current script name without `.sh` extension.
 # 
 # @param    $1                      Replace spaces with underscores?
 #*/
@@ -209,54 +89,64 @@ scrname() {
 }
 
 #/**
-# Print the real script name. It resolves symlinks.
+# Print method of execute the script. It shows:
+#   user - it is run by user in interactive mode.
+#   system - it is run by system (script, shortcut key, etc.).
+#   cron - it is run by cron.
 # 
-# @param    $1                      Replace spaces with underscores?
-#*/
-realscr() {
-    local path=$0
-    test "${path:0:1}" != '/' && path=$(which $0)
-
-    {
-    test "${1}" != '' \
-        && basename "$(realpath ${path})" | tr ' ' '_' \
-        || basename "$(realpath ${path})"; } 2> /dev/null
-}
-
-#/**
-# Print the current script ID.
-#*/
-pid() {
-    { echo $$; } 2> /dev/null
-}
-
-#/**
-# Print the startup directory.
-#*/
-cwd() {
-    { echo ${_CWD}; } 2> /dev/null
-}
-
-#/**
-# Show method of execute the script. It shows:
-#   user - it runs by user in interactive mode.
-#   system - it runs by system (script, shortcut key, etc.).
-#   cron - it runs by cron.
 #*/
 scrmethod() {
-    local p=$(pid)
+    local p=$$
     local path=$(realpath /proc/${p}/fd/0)
 
-    test ${path} = '/dev/null' && echo 'system' && return 0
+    test "${path}" = '/dev/null' && echo 'system' && return 0
     [[ ${path} =~ ^/dev/(pts/)|(tty)[0-9]+ ]] && echo 'user' && return 0
     [[ ${path} =~ ^/proc/[0-9]+/fd/pipe:\[[0-9]+\] ]] && echo 'cron' && return 0
     echo '??' && return 1
 }
 
 #/**
-# Load the module from ${SHELL_LIBDIR} directory.
+# Print the real script name. It resolves symlinks.
 # 
-# @param    String  $1              A module name.
+# @param    $1                      Replace spaces with underscores?
+#*/
+realscr() {
+    {
+    local path=$0
+    test "${path:0:1}" != '/' && path=$(which $0)
+    local rpath=$(realpath "${path}")
+
+    test "${1}" != '' \
+        && basename "${rpath}" | tr ' ' '_' \
+        || basename "${rpath}"; } 2> /dev/null
+}
+
+
+#/**
+# Print the startup directory. 
+#
+# The function always returns the start working directory even you change it by `cd` command.
+#*/
+cwd() {
+    { echo ${_CWD}; } 2> /dev/null
+}
+
+#/**
+# Print the current script PID.
+#
+# It is more readable version of $$ global variable.
+#*/
+pid() {
+    { echo $$; } 2> /dev/null
+}
+
+
+#/**
+# Load the library from ${SHELL_LIBDIR} directory.
+#
+# When loading fails it generates a fatal error and script stops immediately with the error message. Additionally, it generates a syslog entry using the `logger` command.
+#
+# @param    String  $1              Library name.
 # @return   Number                  Operation status.
 #*/
 lib() {
@@ -269,12 +159,12 @@ lib() {
     local lib=${lib/\.inc/}
     local ret=0
 
-    # The module is already loaded.
+    # The library is already loaded.
     if is_lib ${lib}; then
 #        echo "Module ${lib} already loaded" > /dev/stderr
         echo > /dev/null
 
-    # There is no module.
+    # There is no library.
     elif test ! -f ${SHELL_LIBDIR}/${lib}.inc.sh; then
         local msg=$(_msg "Module ${lib} not found" 'module:notfound' ${lib})
         logger -t $(scr):${BASH_LINENO[0]} ${msg}
@@ -282,7 +172,7 @@ lib() {
         echo ${msg} > /dev/stderr
         exit 1
 
-    # Load the module..
+    # Load the library..
     else
         shift
 
@@ -290,7 +180,7 @@ lib() {
 
 #        shopt -s expand_aliases
 
-        # There is a module initial function.
+        # There is a library initial function.
         if is_function ${lib}_init; then
             { ${lib}_init "$@"; } 2> /dev/null
             local ret=$?
@@ -357,15 +247,18 @@ lib() {
         test "$(cwd)" != "$(pwd)" && cd "$(cwd)"
 
     fi;
+    
+    _LIBS[${lib}]=1
+
 #} 2> /dev/null 
 
     { debug_on; return ${ret}; } 2> /dev/null
 }
 
 #/**
-# Is the module loaded?
+# Check if the library is loaded.
 # 
-# @param    String  $1              A module name.
+# @param    String  $1              Library name.
 # @return   Number                  Operation status.
 #*/
 is_lib() {
@@ -374,34 +267,12 @@ is_lib() {
     local lib=${lib/\.sh/}
     local lib=${lib/\.inc/}
 
-    is_function ${lib}_init; } 2> /dev/null
+#    is_function ${lib}_init;  2> /dev/null
+    test -n "${_LIBS[${lib}]}"; }  2> /dev/null
 }
 
 #/**
-# Read data from /dev/stdin using syntax completion.
-# 
-# @param    string  $1              The prompt for the `read` command.
-# @param    array   $2+             List of complete words.
-#*/
-reada() {
-#    {
-    local prompt=$1
-    local id=$(realscr)-$(pid)-completion
-    shift
-    for c in "$@" ; do
-        tmp_file "${c}" "${id}" > /dev/null
-    done
-    
-    cd "$(tmp_rootdir)/${id}" 
-    read -re -p "${prompt}: " usertags 
-    printf "%s" "${usertags}"
-    cd - > /dev/null
-    tmp_clean "${id}"; 
-#} 2> /dev/null
-}
-
-#/**
-# Is the function exist?
+# Check if the function exists.
 # 
 # @param    String  $1              Function name.
 # @return   Number                  Operation status.
@@ -411,7 +282,7 @@ is_function() {
 }
 
 #/**
-# Is shell command exist?
+# Check if the shell command exists.
 # 
 # @param    String  $1              Command name.
 # @return   Number                  Operation status.
@@ -421,7 +292,8 @@ is_command() {
 }
 
 #/**
-# Is there exist the user in the group?
+# Check if the user exists. 
+# And, optionaly, if they are in the group (if you provide the second argument - a group name).
 # 
 # @param    String  $1              User name.
 # @param    String  $2              [Group name].
@@ -443,7 +315,7 @@ is_user() {
 }
 
 #/**
-# Is the group exist?
+# Check if the group exists.
 # 
 # @param    String  $1              Group name.
 # @return   Number                  Operation status.
@@ -458,11 +330,11 @@ is_group() {
 }
 
 #/**
-# Is the user can execute the sudo command?
+# Check if the user can execute a command using the `sudo` command.
 # 
-# @param    String  $1              Command to execute.
-# @param    String  $2              Sudoer user name [root].
-# @return   Number                  Status operacji.
+# @param    String  $1              Command to check.
+# @param    String  $2              Sudo user name [root].
+# @return   Number                  Operation status.
 #*/
 is_sudo() {
     {
@@ -474,7 +346,7 @@ is_sudo() {
 }
 
 #/**
-# Is the script running as root user?
+# Check if the script is running as root.
 # 
 # @return   Number                  Operation status.
 #               0                       As root user.
@@ -485,439 +357,100 @@ as_root() {
 }
 
 
-#/**
-# COMMAND LINE.
-#
-# Manage of the command line arguments and options. 
-# None fun with poor `getopt`..
-#
-# For options (-f --foo) you can use:
-#   opt_is      - Is the opt set?
-#   opt_get     - Get option variable.
-#   opt_size    - Get number of all options.
-#
-# For arguments you can use:
-#   arg_is      - Is an argument by index exist?
-#   arg_get     - Get an argument value by its index.
-#   arg_size    - Get number of all arguments.
-
-# Options from command line.
-declare -A _OPTS
-
-# Arguments from command line.
-_ARGS=()
-
-#*/
+# DEBUG
 
 #/**
-# Is the option exist?
-#
-# @param    String  $1      Option to check. If empty checks any option.
-# @return   Number          Operation status.
-#*/
-opt_is() {
-    { test "${1}" != '' && test "${_OPTS[$1]}" != '' \
-        || test "${1}" = '' && test ${#_OPTS[@]} -ne 0; } 2> /dev/null 
-}
-
-#/**
-# Print the option value.
-#
-# @param    String  $1      Option name.
-# @return   Number          Operation status.
-#*/
-opt_get() {
-    {
-    test "${1}" == '' && return 1
-
-    test "${_OPTS[$1]}" != '' \
-        && ( echo ${_OPTS[$1]}; return 0; ) \
-        || return 1
-
-    return $?; } 2> /dev/null
-}
-
-#/**
-# Is the option exist and it is greater than $2.
-#
-# @param    String  $1      Option to check.
-# @param    String  $2      Value to compare.
-# @return   Number          Operation status.
-#*/
-opt_gt() {
-    {
-    test "${1}" != '' \
-        && [[ ${_OPTS[$1]} =~ ^[0-9]+$ ]] \
-        && [[ ${2} =~ ^[0-9]+$ ]] \
-        && test ${_OPTS[$1]} -gt ${2}; } 2> /dev/null
-}
-
-#/**
-# Is the option exist and it is greater than or equal to $2.
-#
-# @param    String  $1      Option to check.
-# @param    String  $2      Value to compare.
-# @return   Number          Operation status.
-#*/
-opt_ge() {
-    {
-    test "${1}" != '' \
-        && [[ ${_OPTS[$1]} =~ ^[0-9]+$ ]] \
-        && [[ ${2} =~ ^[0-9]+$ ]] \
-        && test ${_OPTS[$1]} -ge ${2} ; } 2> /dev/null
-}
-
-#/**
-# Is the option exist and it is less than $2.
-#
-# @param    String  $1      Option to check.
-# @param    String  $2      Value to compare.
-# @return   Number          Operation status.
-#*/
-opt_lt() {
-    {
-    test "${1}" != '' \
-        && [[ ${_OPTS[$1]} =~ ^[0-9]+$ ]] \
-        && [[ ${2} =~ ^[0-9]+$ ]] \
-        && test ${_OPTS[$1]} -lt ${2} ; } 2> /dev/null
-}
-
-#/**
-# Is the option exist and it is less than or equal to $2.
-#
-# @param    String  $1      Option to check.
-# @param    String  $2      Value to compare.
-# @return   Number          Operation status.
-#*/
-opt_le() {
-    {
-    test "${1}" != '' \
-        && [[ ${_OPTS[$1]} =~ ^[0-9]+$ ]] \
-        && [[ ${2} =~ ^[0-9]+$ ]] \
-        && test ${_OPTS[$1]} -le ${2} ; } 2> /dev/null
-}
-
-#/**
-# Print the number of options.
+# Activate debug mode.
 # 
-# @return   Number          Operation status.
+# To hide execution of the function in debug mode redirect output to /dev/null by:
+# { debug_on; } 2> /dev/null
 #*/
-opt_size() {
-    {
-    if [[ $1 =~ ^[0-9]+$ ]]; then
-        test ${#_OPTS[@]} -eq $1 && return 0 || return 1
-    else
-        echo ${#_OPTS[@]}
-        test ${#_OPTS[@]} -ne 0 && return 0 || return 1
-    fi; } 2> /dev/null
-}
+debug_on() {
+    { 
+#    echo activate ${_DEBUG}
+    [[ ${_DEBUG} =~ ^[0-9]+$ ]] || return 0
 
+    let _DEBUG++
+    set -x
 
-#/**
-# Print the number of arguments.
-# 
-# @return   Number          Operation status.
-#*/
-arg_size() {
-    {
-    if [[ $1 =~ ^[0-9]+$ ]]; then
-        test ${#_ARGS[@]} -eq $1 && return 0 || return 1
-    else
-        echo ${#_ARGS[@]}
-        test ${#_ARGS[@]} -ne 0 && return 0 || return 1
-    fi; } 2> /dev/null
+    } 2> /dev/null
 }
 
 #/**
-# Print the argument by its index.
-# 
-# @param    Number  $1      Index of the argument to print.
-# @return   Number          Operation status.
-#*/
-arg_get() {
-    {
-    local num=${1}
-
-    [[ ${num} =~ ^[0-9]+$ ]] || return 1
-    test ${num} -ge ${#_ARGS[@]} && return 2
-
-    echo ${_ARGS[$1]}
-    return 0; } 2> /dev/null
-}
-
-#/**
-# Parse command line. The convenient version of getopt.
+# Deactivate debug mode.
 #
-# The function starts automatically after loading the module.
-#   parseline "$@"
-# 
-# Parse variable are stored in global variables:
-#   _OPTS - Assoc array of options.
-#   _ARGS - Array of arguements.
-# 
-# Examples of use:
-#   _parseline --key0=value0 \                  - option: key0      value: value0
-#              --key1="value with spaces" \     - option: key1      value: value with spaces
-#              --key2 value2 \                  - option: key2      value: value2
-#              --key3 "value with spaces" \     - option: key3      value: value with spaces
-#              -f \                             - option: f         value: 1
-#              -b \                             - option: b         value: 1
-#              -w -w -w \                       - option: w         value: 3
-#              -xxvdvx \                        - options: xvd      values: 3, 2, 1
-#              arg1 \                           - argument 1: arg1
-#              "arg2 with spaces"               - argument 2: arg2 with spaces
-# 
-# Number of arguments / options is limited by shell limits.
-# The function is unset after use.
+# To show execution of the function in debug mode redirect output to /dev/null by:
+# { debug_off; } 2> /dev/null
 #*/
-_parseline() {
-    local optname
-    local optvalue
-    local opts
-    local i
+debug_off() {
+    {
+#    echo deactivate ${_DEBUG}
+    [[ ${_DEBUG} =~ ^[0-9]+$ ]] || return 0
 
-    while [ "${1}" ]; do
+    test ${_DEBUG} -gt 0 && let _DEBUG--
+    set +x
 
-        #   --key=value
-        #   --key="value with spaces"
-        if [[ ${1} =~ ^--[a-zA-Z0-9]+=.+$ ]]; then
-            optname=${1%%=*}
-            optname=${optname:2}
+    } 2> /dev/null
+}
 
-            optvalue=${1##*=}
+#/**
+# Print a message to stdout. It depends on the '@' function (lang library is loaded). 
+#
+# @param    String  $1  Alternatative text if lang library is not present.
+# @param    String  $2  The lang variable ID if lang library is loaded.
+# @param    String  $3+ Extra arguments for the lang variable.
+#*/
+_msg() {
+    ! is_function '@' && echo "${1}" && return 0
 
-            _OPTS[${optname}]="${optvalue}"
-            optname=
-            optvalue=
+    shift
+    @ $@
+}
 
+_log() {
+    printf '%s: %s\n' $(date '+%H:%M:%S.%N') "$*" > /dev/stderr
+}
 
-        #   --key
-        elif [[ ${1} =~ ^--[a-zA-Z0-9]+$ ]]; then
-            optname=${1:2}
+#/**
+# Print the current call stack with an optional argument.
+#
+# @param    String  $1      Additional argument(s) to print.
+#*/
+checkpoint() {
+    _bt "$@"
+}
 
-            _OPTS[${optname}]='1'
+#/**
+# Print the current call stack.
+#*/
+_bt() {
+    { debug_off; } 2> /dev/null
+    let max=${#FUNCNAME[@]}
+    let max--                                   # << skip main script
 
+    _BT_LAST_FUN=
 
-        #   -<opts_list>
-        elif [[ ${1} =~ ^-[a-zA-Z0-9]+$ ]]; then
-            optname=
-            opts=${1:1}
-            i=$((${#opts} - 1))
+    test -t 0 || echo -n '->'            
+    while test ${max} -ge 1; do                 # << skip _bt() call
+#        if test "${FUNCNAME[$max]}" != 'checkpoint'; then       # << skip call from checkpoint function.
+            if test "${_BT_LAST_FUN}" != "$(basename ${BASH_SOURCE[$max]})"; then
+                _BT_LAST_FUN="$(basename ${BASH_SOURCE[$max]})"
+                echo -n "${_BT_LAST_FUN}[${BASH_LINENO[$max-1]}]:${FUNCNAME[$max]}()"
+            else
+                echo -n "${FUNCNAME[$max]}()[${BASH_LINENO[$max-1]}]"
+            fi
+#        fi
 
-            while [ $i -ge 0 ]; do
-                optname=${opts:$i:1}
-
-                if [ -z ${_OPTS[${optname}]} ]; then
-                    _OPTS[${optname}]=1
-                elif [[ ${_OPTS[${optname}]} =~ ^[0-9]+$ ]]; then
-                    _OPTS[${optname}]=$((${_OPTS[${optname}]} + 1))
-                fi
-
-                i=$((i - 1))
-            done
-        elif [ "${optname}" != '' ]; then
-            _OPTS[${optname}]="${1}"
-            optname=
+        if test ${max} -gt 1; then
+            echo -n ' > '
         else
-            _ARGS+=("${1}")
+            echo " = $*"
         fi
 
-        shift 1
-    done
-}
-
-
-#/**
-# TEMPORARY FILES.
-# 
-# The temporary files are stored in the current user directory. Only user have access to them.
-#
-#   _tmp_init   - prepare the temporary root directory (autoamatic call).
-#   tmp_dir     - print the path to the temporary root directory.
-#   tmp_file    - print the path to the temporary file. Each call generates new temporary file.
-#   tmp_clean   - delete all temporary files (manually call).
-#*/
-
-#/**
-# Print the temporary root directory path.
-#*/
-tmp_rootdir() {
-    { echo /tmp/ram00/$(whoami); } 2> /dev/null
-}
-
-#/**
-# Print the custom temporary directory.
-# 
-# @param    String  $1      Name of the temporary directory (subdir relative temporary root directory).
-#*/
-tmp_dir() {
-    {
-    local rootdir=$(tmp_rootdir)
-    local subdir=${1:-$(realscr)-$(pid)}
-
-    if test -z "${subdir}"; then
-        echo ${rootdir}
-    else 
-        test ! -e "${rootdir}/${subdir}" && mkdir "${rootdir}/${subdir}"
-
-        echo ${rootdir}/${subdir}
-    fi; } 2> /dev/null
-}
-
-#/**
-# Print the temporary file path.
-#
-# As default the temporary files are storead in $(tmp_dir). 
-# To keep order, it is possible to separete the temporary files to many subdirectories using prefix.
-# 
-# @param    String  $1      File prefix.
-# @param    String  $2      Subdirectory name.
-#*/
-tmp_file() {
-    {
-#    local subdir=${2:-$(realscr)-$(pid)}
-#    local fpath="$(tmp_rootdir)/${subdir}/" prefix=${1}
-    local fpath="$(tmp_dir ${2})/" prefix=${1}
-
-    ! -e ${fpath} && mkdir ${fpath}
-
-    if test "${prefix}" == '' -o "${prefix}" == '#'; then
-        fpath+=$(cat /dev/urandom | head -n1 | md5sum | cut -c 1-8)
-    else
-        [[ ${prefix} =~ .*/.* ]] && prefix=$(basename "${prefix}")
-
-        local hash_pattern='.*#.*'
-
-        while [[ ${prefix} =~ ${hash_pattern} ]]; do
-            prefix=${prefix/\#/$(cat /dev/urandom | head -n1 | md5sum | cut -c 1-8)}
-        done
-
-        fpath+=${prefix}
-    fi
-
-    touch "${fpath}"
-    echo "${fpath}"; } 2> /dev/null
-}
-
-#/**
-# Delete the temporary files/directories.
-# 
-# @param    String  $1      Subdirectory name. Domyślnie $(realscr)-$(pid).
-#*/
-tmp_clean() {
-    {
-    local tmp=$(tmp_dir ${1})
-    # call rm -fr ${tmp} is too risky.
-    # rm -fr ${tmp}
-
-    # Let's check first if we are in the right directory?
-    if test -d "${tmp}" && [[ ${tmp} =~ ^/tmp ]]; then
-        rm -f ${tmp}/*
-        rmdir ${tmp}
-    fi; } 2> /dev/null
-
-#    if [ -d "${tmp}/$(realscr)-$(pid)" ]; then
-#        rm -f ${tmp}/$(realscr)-$(pid)/*
-#        rmdir ${tmp}/$(realscr)-$(pid)/
-#    fi
-}
-
-#/**
-# Prepare the temporary subdirectory.
-#
-# @param    String  $1      Subdirectory name.
-#*/
-tmp_mkdir() {
-    {
-    local t=${1}
-    test -z ${t} && return 1
-    test -d $(tmp_rootdir)/${t} && return 0
-    mkdir -p $(tmp_rootdir)/${t} 2> /dev/null; } 2> /dev/null
-}
-
-#/**
-# Create the temporary directory.
-# 
-# The function is unset after call.
-#*/
-_tmp_init() {
-    local tmp_dir=$(tmp_rootdir)
-
-    test ! -d ${tmp_dir} && mkdir -p ${tmp_dir}
-
-    chmod 700 ${tmp_dir}
-}
-
-
-# ERRORS HANDLING.
-
-#/**
-# Set the last error message.
-#
-# @param    String  $*      Error message.
-#*/
-err_set() {
-    { _LAST_ERROR="$*"; } 2> /dev/null
-}
-
-#/**
-# Print the last error message.
-#*/
-err_get() {
-    { echo $_LAST_ERROR; } 2> /dev/null
-}
-
-#/**
-# Print the error message to /dev/stderr and continue.
-#
-# @param    String  $*      Error message. błędu. If empty it is try use last error message.
-#*/
-err_dump() {
-    { debug_off; } 2> /dev/null
-    if [ "$1" == '' ]; then
-        local msg=$(err_get) 
-    else
-        local msg=$*
-    fi
-
-    if test -n "${msg}"; then
-        if is_function textln; then
-            textln -m "${msg}" -f WHITE -b RED > /dev/stderr
-        else
-            echo -en "\x1b[41;37;5m" > /dev/stderr
-            echo -n ${msg}
-            echo -e "\x1b[0m" > /dev/stderr
-        fi
-    fi
+        let max--
+    done 
     { debug_on; } 2> /dev/null
 }
-
-#/**
-# Print the error message to  /dev/stderr and exit with code 1.
-#
-# @param    String  $*      Error message. błędu. If empty it is try use last error message.
-#*/
-err_fatal() {
-    { debug_off; } 2> /dev/null
-    if test "$1" != ''; then
-        test "$(err_get)" != '' && err_dump "$(err_get)" 
-        err_dump "$@"
-    else
-        err_dump "$@"
-    fi
-    { debug_on; } 2> /dev/null
-    exit 1
-}
-
-
-# UNSET HELPER FUNCTIONS
-
-# Parse the command line arguments and unset the _parseline() function.
-_parseline "$@"; unset _parseline
-
-# Prepare the temporary directories and unset the _tmp_init() function.
-_tmp_init; unset _tmp_init
-
 
 { test "${_DEBUG}" == '0' && set -x; } 2> /dev/null
 

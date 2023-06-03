@@ -476,7 +476,7 @@ function fs_mksym() {
     test -z "${src}" && return 1
     test -z "${dst}" && return 2
 
-    ! fs_is_exist "${src}" && return 3
+#    ! fs_is_exist "${src}" && return 3
 
     fs_is_symlink "${dst}" && unlink "${dst}" 
 
@@ -529,7 +529,7 @@ function fs_rmdir() {
 #*/
 function fs_unlink() {
     ! fs_is_exist "${1}" && return 1
-    fs_is_dir "${1}" && return 2
+    fs_is_dir "${1}" && ! fs_is_symlink "${1}" && return 2
     
     unlink "${1}" 2> /dev/null
 }

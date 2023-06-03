@@ -1,14 +1,14 @@
 #/**
 # LANGUAGE MANAGEMENT.
 #
-# The interface for managing the language data.
+# The interface for managing the language data in bash scripts.
 #
 # [DEPENDENCIES] 
-# conf module
+# conf library
 # 
-# It based on the `conf` module mechanism.
+# It based on the `conf` library mechanism.
 #
-# The language data is stored in extra INI files instead of being hardcoded in proper shell script.
+# The language data are stored in extra INI files instead of being hardcoded in a proper shell script.
 # 
 # The root directory for the language files is:
 # ${SHELL_LANGDIR}/${LC_MESSAGES}
@@ -17,14 +17,14 @@
 # <name>.lang.ini
 #
 # In short:
-#   lang_load     Load the language data.
-#   lang_get      Get the language variable.
-#   lang_set      Set the language variable.
+#   lang_load     Load the language data from the file.
+#   lang_get      Print the language variable.
+#   lang_set      Set the language variable value.
 # 
 # 
 # Example:
 #
-# -- foobar.lang.ini
+# --- ${SHELL_LANGDIR}/foobar.lang.ini ---
 # [app]
 # name      = What is the name?
 # started   = Application started at %s by %s
@@ -34,7 +34,7 @@
 # type = Account type is %s
 # hello = Hello %s
 #
-# -- foobar.sh
+# --- foobar.sh ---
 # . ${SHELL_BOOTSTRAP}
 # lib lang 
 #
@@ -44,10 +44,12 @@
 #*/
 
 #/**
-# Load the language data. When you specify only name of the language file it will try to load file:
-# ${SHELL_LANGDIR}/${LC_MESSAGES}/<name>.lang.ini
+# Load the language data from the file. 
 #
-# @param    String  $1      The language file name. You can pass the absolute path to the file or name only.
+# When you specify only the name of the language file, it will try to load it like below:
+# ${SHELL_LANGDIR}/${LC_MESSAGES}/{name}.lang.ini
+#
+# @param    String  $1      The language file name. You can pass the absolute path to the file or only the name.
 # @param    String  $2      The section name [DEFAULT].
 # @return   Number          Operation status.
 function lang_load() {
@@ -72,14 +74,15 @@ function lang_load() {
         return 2
     fi
 
-    conf_load "${lang_fpath}" "${section}" 'LANG'
+    conf_load "${lang_fpath}" "${section}" '@LANG'
     return $?; } 2> /dev/null
 }
 
 #/**
-# Get the language variable.
+# Print the language variable.
 #
-# If the language variable is parametrized then you put the parameters as arguments starting by 2.
+# The language variable can be parametrized. You can put the parameters as arguments starting by the second one.
+# There is a shorter version of this function. Instead `lang_get` you can use `@`.
 # Example:
 #
 # -- foobar.lang.ini:
@@ -96,8 +99,8 @@ function lang_load() {
 #*/
 function lang_get() {
     {
-    if conf_is "$1" 'LANG'; then
-        conf_get $* 'LANG'
+    if conf_is "$1" '@LANG'; then
+        conf_get "$@" '@LANG'
     else
         echo $1
         return 1
@@ -113,7 +116,7 @@ function lang_get() {
 #*/
 function lang_set() {
     {
-    conf_set "$1" "$2" 'LANG'
+    conf_set "$1" "$2" '@LANG'
     local ret=$?
     if test ${ret} -ne 0; then
         return ${ret}
@@ -130,7 +133,7 @@ function @() {
 }
 
 #/**
-# Initialize the module.
+# Initialize the library.
 #*/
 function lang_init() {
     {

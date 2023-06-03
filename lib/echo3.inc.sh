@@ -1,31 +1,137 @@
-### 2020-04-20 Actual version.
-
 #/**
-# Helper function for the printing messages, input data from user
+# Helper functions for input data from user, printing messages and cursor management.
+# 
+# These functions can be divided into several categories.
+
+##### Basic text printing
+# 
+# text  - Print text (also with color options) in a specified position. No break line at the end.
+# textln  - Works as above but adds a newline character at the end.
+# line  - Print the full-width separator line.
+# header  - Print the header.
+
+##### Print an action status message
+# 
+# success  - Print success message (green color).
+# info  - Print information message (blue color).
+# warning  - Print warning message (yellow color).
+# error  - Print error message (red color).
+# fatal  - Print fatal error message (red color).
+
+##### Print the progress and results of the actions
+# 
+# progress  - Print the progress (step) of the action.
+# result  - Print the result of the action.
+
+##### Getting information from the user
+# 
+# confirm  - Confirm the action execution. 
+# input  - Get information from the user.
+# password  - Get the password from the user.
+
+##### Cursor management
+# 
+# cursor\_move  - Move the cursor to the specified coordinates.
+# cursor\_up  - Move the cursor to the previous line(s).
+# cursor\_down  - Move the cursor to the next line(s).
+# cursor\_left  - Move the cursor to the previous column(s).
+# cursor\_right  - Move the cursor to the next column(s).
+
+##### Extra functions
+# echof  - Print formatted text.
+# verbose\_mode  - Set verbose mode.
+# ansi\_state  - Set the output file descriptor for the ANSI control sequences.
+
+#### Colors
+# 
+# Defined colors for printing functions.
+
+##### Dark variants of the colors
+# 
+# - black
+# - red
+# - green
+# - yellow
+# - blue
+# - purple
+# - cyan
+# - white
+
+##### Light variants of the colors
+# 
+# - BLACK
+# - RED
+# - GREEN
+# - YELLOW
+# - BLUE
+# - PURPLE
+# - CYAN
+# - WHITE
+
+##### ANSI Sequences
+# 
+# ANSI sequences are used by [echof](/bhs/lib/echo3/echof) function:
+# 
+# |  sequence             | meaning                                                       |
+# | :-                    | --                                                            |
+# | %~                    | Work directory.                                               |
+# | %{nl}                 | New line.                                                     |
+# | **_Clear the line_**  |                                                               |
+# | %{clb}                | Clear the line from the cursor to the beginning.              |
+# | %{cle}                | Clear the line from the cursor to the end.                    |
+# | %{cl}                 | Clear the whole line.                                         |
+# | %{csb}                | Clear the screen from the cursor to the beginning.            |
+# | %{cse}                | Clear the screen from the cursor to the end.                  |
+# | %{cs}                 | Clear the whole screen.                                       |
+# | **_Navigate_**        |                                                               |
+# | %{home}               | Move the cursor to the 1:1 coordinates.                       |
+# | %{moveC}              | Move the cursor to the specified column in the current row.   |
+# | %{gotoL:C}            | Move the cursor to the specified coordinates.                 |
+# | %{upN}                | Move the cursor to the previous line.                         |
+# | %{downN}              | Move the cursor to the next line.                             |
+# | %{leftN}              | Move the cursor to the previous column.                       |
+# | %{rightN}             | Move the cursor to the next column.                           |
+# | **_Attributes_**      |                                                               |
+# | %{reset}              | Reset all attributes.                                         |
+# | %{fgNNN}              | Set font color from [256-color palette](https://www.ditig.com/256-colors-cheat-sheet).                    |
+# | %{nofg}               | Set font color to default.                                    |
+# | %{bgNNN}              | Set background color from [256-color palette](https://www.ditig.com/256-colors-cheat-sheet).              |
+# | %{nobg}               | Set default background color.                                 |
+# | %{bold}               | Enable text-bold.                                             |
+# | %{nobold}             | Disable text-bold.                                            |
+# | %{underline}          | Enable text-underline.                                        |
+# | %{nounderline}        | Disable text-underline.                                       |
+# | %{blink}              | Enable text-blinking.                                         |
+# | %{noblink}            | Disable text-blinking.                                        |
+# | %{inverse}            | Enable reverse colors.                                        |
+# | %{noinverse}          | Disable reverse colors.                                       |
 #*/
 
+# MESSAGES
+
 #/**
-# Print text in the specified position and color. Do not move cursor to the next line.
+# Print text in a specified position. No break line at the end.
 # 
-# By default the text is printed at the current cursor position.
+# By default text is printed at the current cursor position.
 # 
 # Examples:
-# text -f white -b red -c 10 -m 'Red alert' -p '> '             # It prints the text '> Red alert' in white text and red background.
-# text -f GREEN -t 'OK' -m 'The missile launch is complete'     # It prints the text '[ OK ] The missile launch is complete. The tag 'OK' is in the bright green color.
+# text -f white -b red -c 10 -m 'Red alert' -p '> '             # It prints text '> Red alert' in white text and red background.
+# text -f GREEN -t 'OK' -m 'The missile launch is complete'     # It prints text '[ OK ] The missile launch is complete. The tag 'OK' is in the bright green color.
 #
 # @param    String  -m $1       Text to print.
 # @param    String  -f $2       Text color.
 # @param    String  -b $3       Background color.
-# @param    Number  -c $4       Column number to start printing.
+# @param    Number  -c $4       Column number where text printing begins.
 # @param    String  -t $5       Extra tag to print.
 # @param    String  -p          Extra prefix for printing text. Only use if tag is not present.
+# @param    String  -C          Do not clear the rest of the line.
 #*/
 text() {
     { debug_off; } 2> /dev/null
 
     test $# -eq 0 && return 1
 
-    local msg fcol bcol col tag prefix
+    local msg fcol bcol col tag prefix save_eol
     if test "${1:0:1}" == '-'; then
         while test -n "${1}"; do
             case ${1} in
@@ -52,16 +158,21 @@ text() {
                 -p|--prefix) 
                     prefix=${2} 
                     shift 2 ;;
+                    
+                -C|--clear)
+                    save_eol=1
+                    shift 1 ;;
 
                 *) shift
             esac
         done
     else
-        msg=${1}
-        fcol=${2}
-        bcol=${3}
-        col=${4}
-        tag=${5}
+        msg=$*
+#        msg=${1}
+#        fcol=${2}
+#        bcol=${3}
+#        col=${4}
+#        tag=${5}
         prefix=''
     fi
 
@@ -93,21 +204,22 @@ text() {
         fi
 #    fi
 
-    _ansi_sequence '0K'
+    test -z "${save_eol}" && _ansi_sequence '0K'
     { debug_on; } 2> /dev/null
 }
 
 #/**
-# Print text in the specified position and color. Go to the next line after that.
+# Print text in a specified position and with line break.
 # 
 # It is a wrapper to `text()` function + line break at the end.
 #
 # @param    String  -m $1       Text to print.
 # @param    String  -f $2       Text color.
 # @param    String  -b $3       Background color.
-# @param    Number  -c $4       Column number to start printing.
+# @param    Number  -c $4       Column number where text printing begins.
 # @param    String  -t $5       Extra tag to print.
-# @param    String  -p          Extra prefix for printing text. Only use if tag is not present.
+# @param    String  -p $6       Extra prefix for printing text. Only use if tag is not present.
+# @param    Boolean -C          Do not clear the rest of the line."
 #*/
 textln() {
     { debug_off; } 2> /dev/null
@@ -128,6 +240,7 @@ line() {
     local char fcol bcol max content
 
     if test "${1:0:1}" == '-'; then
+        char='-'
         while test -n "${1}"; do
             case ${1} in
                 -c|--char)  char="${2:0:1}" 
@@ -172,8 +285,8 @@ line() {
 }
 
 #/**
-# Print tht header.
-# Format: <prefix> <header>\n
+# Print the header.
+# Output format is: {prefix} {header}\n.
 # 
 # Examples:
 #   header -m 'Header 1'                  # > Header 1
@@ -183,7 +296,7 @@ line() {
 # 
 # @param    String  -m $1       Header content.
 # @param    Number  -l $2       Header level (indent level).
-# @param    String  -p $3       Header prefix.
+# @param    String  -p $3       Header prefix. [>]
 # @param    String  -f $4       Text color.
 # @param    String  -b $5       Background color.
 #*/
@@ -270,119 +383,239 @@ header() {
 }
 
 
-# TASKS: PROGRESS & RESULT.
+# STATUS MESSAGES
 
 #/**
-# Confirm the task execution. If it run in the termianl (interactive mode) that prints the confirmation message to stdout. 
-# For non-interactive mode (e.g: keybinding in X session, run from cron, etc.) it tries to use an external shell script named `confirmbox.sh` 
-# that should bring up a GUI confirmation dialog.
+# Print the success message in green.
 #
-# @param    String  -m $1       Question content.
-# @return                       Operation status.
+# @param    String  -m $1       Message to print.
+# @param    String  -t $2       The tag.
 #*/
-confirm() {
+success() {
     { debug_off; } 2> /dev/null
-    
-    local type=$(scrmethod) answer=
-    test $# -gt 0 && local msg="$*" || local msg='execute?'
 
-    case ${type} in
-        user)   
-            text -m "${msg} [y/n]: "
-            { read -s -n 1 answer; } 2> /dev/null
-            { debug_on; } 2> /dev/null
-            { [[ ${answer} =~ [yt] ]]; } 2> /dev/null
-            ;;
+    test -z "$1" && return 1
+
+    local tag= msg=
+
+    if test "${1:0:1}" == '-'; then
+        while test -n "${1}"; do
+            case ${1} in
+                -t|--tag)
+                    if test -z "${2}" || test "${2:0:1}" = '-'; then
+                        tag='OK'
+                    else
+                        tag=${2} 
+                        shift
+                    fi
+                    ;;
+
+                -m|--msg)
+                    msg=${2} 
+                    shift ;;
+            esac
             
-        system)
-            is_command confirmbox.sh || return 1
+            shift 
+        done
 
-            confirmbox.sh -m "${msg}" 2> /dev/null
-            answer=$?
-            
-            { debug_on; } 2> /dev/null
-            { test ${answer} -eq 0; } 2> /dev/null
-            ;;
+        result -m "${msg}" -t "${tag}" -f green
+    elif test $# -eq 2; then
+        result -m "${1}" -t "${2}" -f green 
+    else
+        result -m "$*" -f green
+    fi
 
-        *)
-            { debug_on; } 2> /dev/null
-            ;;
-    esac
+    { debug_on; } 2> /dev/null
 }
 
 #/**
-# Get data from the user. If it runs in the terminal (interactive mode) reads data from stdin.
-# Otherwise (e.g: keybinding in X session, run from cron, etc.) it tries to use an external shell script named `inputbox.sh` 
-# that should bring up a GUI input dialog.
+# Print the information message in blue.
 #
-# @param    String  -m $1       Question content.
+# @param    String  -m $1       Message to print.
+# @param    String  -t $2       The tag.
 #*/
-input() {
+info() {
     { debug_off; } 2> /dev/null
-    
-    local type=$(scrmethod) answer=
-    local msg="$*"
 
-    case ${type} in
-        user)   
-            read -p "${msg}: " answer
-            { debug_on; } 2> /dev/null
-            echo ${answer}
-            ;;
-            
-        system)
-            is_command inputbox.sh || return 1
+    test -z "$1" && return 1
 
-            inputbox.sh -m "${msg}"
+    local tag= msg=
+
+    if test "${1:0:1}" == '-'; then
+        while test -n "${1}"; do
+            case ${1} in
+                -t|--tag)
+                    if test -z "${2}" || test "${2:0:1}" = '-'; then
+                        tag='II'
+                    else
+                        tag=${2} 
+                        shift
+                    fi
+                    ;;
+
+                -m|--msg)
+                    msg=${2} 
+                    shift ;;
+            esac
             
-            { debug_on; } 2> /dev/null
-            ;;
-            
-        *)
-            { debug_on; } 2> /dev/null
-            ;;
-    esac
+            shift 
+        done
+
+        result -m "${msg}" -t "${tag}" -f blue
+    elif test $# -eq 2; then
+        result -m "${1}" -t "${2}" -f blue 
+    else
+        result -m "$*" -f blue
+    fi
+
+    { debug_on; } 2> /dev/null
 }
 
 #/**
-# Get the password for the user. If it runs in the terminal (interactive mode) reads data from stdin.
-# Otherwise (e.g: keybinding in X session, run from cron, etc.) it tries to use an external shell script named `inputbox.sh` 
-# that should bring up a GUI input dialog.
+# Print the warning message in yellow.
 #
-# @param    String  -m $1       Question content.
+# @param    String  -m $1       Message to print.
+# @param    String  -t $2       The tag.
 #*/
-password() {
+warning() {
     { debug_off; } 2> /dev/null
-    
-    local type=$(scrmethod) answer=
-    local msg="$*"
 
-    case ${type} in
-        user)   
-            read -s -p "${msg}: " answer
-            { debug_on; } 2> /dev/null
-            echo ${answer}
-            ;;
-            
-        system)
-            is_command inputbox.sh || return 1
+    test -z "$1" && return 1
 
-            inputbox.sh -p -m "${msg}" 
+    local tag= msg=
+
+    if test "${1:0:1}" == '-'; then
+        while test -n "${1}"; do
+            case ${1} in
+                -t|--tag)
+                    if test -z "${2}" || test "${2:0:1}" = '-'; then
+                        tag='WW'
+                    else
+                        tag=${2} 
+                        shift
+                    fi
+                    ;;
+
+                -m|--msg)
+                    msg=${2} 
+                    shift ;;
+            esac
             
-            { debug_on; } 2> /dev/null
-            ;;
-            
-        *)
-            { debug_on; } 2> /dev/null
-            ;;
-    esac
+            shift 
+        done
+
+        result -m "${msg}" -t "${tag}" -f yellow
+    elif test $# -eq 2; then
+        result -m "${1}" -t "${2}" -f yellow 
+    else
+        result -m "$*" -f yellow
+    fi
+
+    { debug_on; } 2> /dev/null
 }
+
+#/**
+# Print the error message in red.
+#
+# @param    String  -m $1       Message to print.
+# @param    String  -t $2       The tag.
+#*/
+error() {
+    { debug_off; } 2> /dev/null
+
+    local tag= msg=
+
+    if test "${1:0:1}" == '-'; then
+        while test -n "${1}"; do
+            case ${1} in
+                -t|--tag)
+                    if test -z "${2}" || test "${2:0:1}" = '-'; then
+                        tag='!!'
+                    else
+                        tag=${2} 
+                        shift
+                    fi
+                    ;;
+
+                -m|--msg)
+                    msg=${2} 
+                    shift ;;
+            esac
+            
+            shift 
+        done
+
+        result -m "${msg}" -t "${tag}" -f red
+    elif test $# -eq 2; then
+        result -m "${1}" -t "${2}" -f red 
+    else
+        result -m "$*" -f red
+    fi
+
+    { debug_on; } 2> /dev/null
+}
+
+#/**
+# Print the fatal error message in red.
+# 
+# It terminates the script immediately.
+#
+# @param    String  -m $1       Message to print.
+# @param    String  -t $2       The tag.
+#*/
+fatal() {
+    { debug_off; } 2> /dev/null
+
+    if test -z "${1}"; then
+        if is_function 'err_get'; then
+            local msg=$(err_get) 
+            test -n "${msg}" \
+                && textln -m "${msg}" -b RED -f white \
+                || return 1
+        fi
+    fi
+
+    local tag= msg=
+
+    if test "${1:0:1}" == '-'; then
+        while test -n "${1}"; do
+            case ${1} in
+                -t|--tag)
+                    if test -z "${2}" || test "${2:0:1}" = '-'; then
+                        tag='!!'
+                    else
+                        tag=${2} 
+                        shift
+                    fi
+                    ;;
+
+                -m|--msg)
+                    msg=${2} 
+                    shift ;;
+            esac
+            
+            shift 
+        done
+
+        result -m "${msg}" -t "${tag}" -f white -b RED
+    elif test $# -eq 2; then
+        result -m "${1}" -t "${2}" -f white -b RED 
+    else
+        result -m "$*" -f white -b RED
+    fi
+
+    exit 1
+    { debug_on; } 2> /dev/null
+}
+
+
+# TASK PROGRESS & RESULT
 
 #/**
 # Print a progress (step) of the task.
 #
-# It starts printing at the begining of the line and it returns the cursor at the beginning of the line.
-# When the tasks are finished You should go to next line (perform one of functions; result, textln or just echo command).
+# It starts printing at the beginning of the line. The cursor returns to the starting position.
+# When the task is finished you should move to the next line using one of the functions: `result()`, `textln()` or just `echo` command.
 #
 # Examples:
 #   progress -m 'First step' -i 1 -n 10 -t      # [ 1/10 ] First step
@@ -392,15 +625,15 @@ password() {
 #   progress -m 'Fifth step' -i 5 -n 10 -S      # [ - ] Fifth step
 # 
 # @param    String  -m $1       Message content.
-# @param    String     $2       The current step / output format.
+# @param    String     $2       The output format:
 #                   -t  i:N         Tag:            [ i/N ] <msg>
 #                   -s  i/N         Step:           > i / N: <msg>
-#                   -p  i%[N]       Percent:        > i%: <msg>
-#                   -b  i#[N]       Progress bar:   [####      ] <msg>
+#                   -p  i%N         Percent:        > i%: <msg>
+#                   -b  i#N         Progress bar:   [####      ] <msg>
 #                   -S  /           Spinner:        [ / ] <msg>
 # @param    String  -f $3       Text color.
-# @param    String  -n          Maximum of steps.
-# @param    String  -i          The current step.
+# @param    Number  -n          Maximum of steps.
+# @param    Number  -i          The current step.
 #*/
 progress() {
     { debug_off; } 2> /dev/null
@@ -587,8 +820,8 @@ progress() {
 #/**
 # Print the result of the task.
 # 
-# Result format: [ <tag> ] <msg>
-#                > <msg>
+# Result format: [ {tag} ] {msg}
+#                > {msg}
 #
 # @param    String  -m $1       The result message content.
 # @param    String  -f $2       Tag/message color.
@@ -598,14 +831,14 @@ progress() {
 result() {
     { debug_off; } 2> /dev/null
 
-    test -z "${1}" && return 1
+    test -z "${1}" && return 0
 
     local type=$(scrmethod)
     
     # The script is running by user - print information to the standard output.
     if test "${type}" = 'user'; then
         _ansi_sequence '0G' '2K'
-        if test "${1:0:1}" == '-'; then
+        if test "${1:0:1}" = '-'; then
             textln "$@" -p '> '
         elif test $# -ge 4; then
             textln "${1}" "${2}" "${3}" '' "${4}"
@@ -615,6 +848,19 @@ result() {
 
     # The script is running by system/cron - print information to the logfile and XMessageBox.
     else
+        # The script is running by system - print information to the logfile and XMessageBox.
+        if test "${type}" = 'system'; then
+            ansi_state 0
+            _ansi_sequence '0G' '2K'
+            if test "${1:0:1}" = '-'; then
+                textln "$@" -p '> '
+            elif test $# -ge 4; then
+                textln "${1}" "${2}" "${3}" '' "${4}"
+            else
+                textln "$@"
+            fi
+        fi
+
         local msg= fcol= tag= icon=
 
         if test "${1:0:1}" == '-'; then
@@ -641,23 +887,25 @@ result() {
             tag="${4}"
         fi
         
+        # [FIXIT]
         # Find icon name.
-        if test -n "${tag}"; then
-            case ${tag^^} in
-                ERR|ERROR|EE|'!!')          icon='dialog-error' ;;
-                WARN|WARNING|WW|'##')       icon='dialog-warning' ;; 
-                INFO|INFORMATION|II|'ii')   icon='dialog-information' ;;
-                SUCC|SUCCESS|OK|'++')       icon='gtk-apply' ;;
-            esac
-        elif test -n "${fcol}"; then
-            case ${fcol} in
-                red|RED)        icon='dialog-error'; tag='EE' ;;
-                yellow|YELLOW)  icon='dialog-warning'; tag='WW' ;;
-                blue|BLUE)      icon='dialog-information'; tag='II' ;;
-                green|GREEN)    icon='gtk-apply'; tag='OK' ;;
-            esac
-        fi
+#        if test -n "${tag}"; then
+#            case ${tag^^} in
+#                ERR|ERROR|EE|'!!')          icon='dialog-error' ;;
+#                WARN|WARNING|WW|'##')       icon='dialog-warning' ;; 
+#                INFO|INFORMATION|II|'ii')   icon='dialog-information' ;;
+#                SUCC|SUCCESS|OK|'++')       icon='gtk-apply' ;;
+#            esac
+#        elif test -n "${fcol}"; then
+#            case ${fcol} in
+#                red|RED)        icon='dialog-error'; tag='EE' ;;
+#                yellow|YELLOW)  icon='dialog-warning'; tag='WW' ;;
+#                blue|BLUE)      icon='dialog-information'; tag='II' ;;
+#                green|GREEN)    icon='gtk-apply'; tag='OK' ;;
+#            esac
+#        fi
 
+        # [FIXIT]
         # Find the parent processes.
 #        local pstree=()
 #        local ppid=${PPID}
@@ -679,152 +927,229 @@ result() {
         test -n "${tag}" && tag="${pspath} [ ${tag} ]" || tag="${pspath}"
         
         logger -t "${tag}" "${msg}"
-#        test "${type}" = 'system' && is_command msgbox.sh && msgbox.sh -m "${msg}" -i "${icon}" -b
-    fi
-
-#        echo ${BASH_SOURCE[@]}
-#        echo ${FUNCNAME[@]}
-#        echo ${BASH_LINENO[@]}
-
-    { debug_on; } 2> /dev/null
-}
-
-
-#/**
-# Print the success message (green color).
-#
-# @param    String  -m $1       Message to print.
-# @param    String  -t $2       The tag.
-#*/
-success() {
-    { debug_off; } 2> /dev/null
-
-    test -z "$1" && return 1
-
-    if test "${1:0:1}" == '-'; then
-        result "$@" -f green
-    elif test $# -eq 2; then
-        result -m "${1}" -f green -t "${2}"
-    else
-        result -m "${1}" -f green
     fi
 
     { debug_on; } 2> /dev/null
 }
 
+
+# INPUT DATA
+
 #/**
-# Print the information message (blue color).
+# Confirm the task execution. 
 #
-# @param    String  -m $1       Message to print.
-# @param    String  -t $2       The tag.
+# If it is run in the terminal (interactive mode) the confirmation message is printed to `stdout`. 
+# To confirm the action, press the 'y' key. Only then the function returns true.
+# For non-interactive mode (e.g: keybinding in X session, running from cron) it tries to use the external shell script named `confirmbox.sh` 
+# that should bring up a GUI confirmation dialog.
+#
+# @param    String     $1       Confirmation question.
+# @return                       Operation status.
 #*/
-info() {
+confirm() {
     { debug_off; } 2> /dev/null
+    
+    local type=$(scrmethod) answer=
+    test $# -gt 0 && local msg="$*" || local msg='execute?'
 
-    test -z "$1" && return 1
+    case ${type} in
+        user)   
+            text -m "${msg} [y/n]: "
+            { read -s -n 1 answer; } 2> /dev/null
+            { debug_on; } 2> /dev/null
+            { [[ ${answer} =~ [yt] ]]; } 2> /dev/null
+            ;;
+            
+        system)
+            is_command confirmbox.sh || return 1
 
-    if test "${1:0:1}" == '-'; then
-        result "$@" -f blue
-    elif test $# -eq 2; then
-        result -m "${1}" -f blue -t "${2}"
-    else
-        result -m "${1}" -f blue
-    fi
+            confirmbox.sh -m "${msg}" 2> /dev/null
+            answer=$?
+            
+            { debug_on; } 2> /dev/null
+            { test ${answer} -eq 0; } 2> /dev/null
+            ;;
 
-    { debug_on; } 2> /dev/null
+        *)
+            { debug_on; } 2> /dev/null
+            ;;
+    esac
 }
 
 #/**
-# Print the warning message (yellow color).
+# Gets information from the user. 
 #
-# @param    String  -m $1       Message to print.
-# @param    String  -t $2       The tag.
+# If it is run in the terminal (interactive mode) data is read from `stdin`.
+# Otherwise (e.g: keybinding in X session, running from cron) it tries to use the external shell script named `inputbox.sh` 
+# that should bring up a GUI input dialog.
+#
+# @param    String     $1       Message content.
 #*/
-warning() {
+input() {
     { debug_off; } 2> /dev/null
+    
+    local type=$(scrmethod) answer=
+    local msg="$*"
 
-    test -z "$1" && return 1
+    case ${type} in
+        user)   
+            read -p "${msg}: " answer
+            { debug_on; } 2> /dev/null
+            echo ${answer}
+            ;;
+            
+        system)
+            is_command inputbox.sh || return 1
 
-    if test "${1:0:1}" == '-'; then
-        result "$@" -f yellow
-    elif test $# -eq 2; then
-        result -m "${1}" -f yellow -t "${2}"
-    else
-        result -m "${1}" -f yellow
-    fi
-
-    { debug_on; } 2> /dev/null
+            inputbox.sh -m "${msg}"
+            
+            { debug_on; } 2> /dev/null
+            ;;
+            
+        *)
+            { debug_on; } 2> /dev/null
+            ;;
+    esac
 }
 
 #/**
-# Print the error message (red color).
+# Get the password for the user. 
 #
-# @param    String  -m $1       Message to print.
-# @param    String  -t $2       The tag.
+# If it is run in the terminal (interactive mode) password is read from `stdin`.
+# Otherwise (e.g: keybinding in X session, running from cron) it tries to use the external shell script named `passwordbox.sh` 
+# that should bring up a GUI input dialog.
+#
+# @param    String  -m $1       Message content.
 #*/
-error() {
+password() {
+    { debug_off; } 2> /dev/null
+    
+    local type=$(scrmethod) answer=
+    local msg="$*"
+
+    case ${type} in
+        user)   
+            read -s -p "${msg}: " answer
+            { debug_on; } 2> /dev/null
+            echo ${answer}
+            ;;
+            
+        system)
+            is_command inputbox.sh || return 1
+
+            inputbox.sh -p -m "${msg}" 
+            
+            { debug_on; } 2> /dev/null
+            ;;
+            
+        *)
+            { debug_on; } 2> /dev/null
+            ;;
+    esac
+    
+    # Add new line after reading the password.
+    echo > /dev/stderr
+}
+
+# CURSOR
+
+#/**
+# Move the cursor to the specified coordinates.
+# 
+# @param    Number  $1      Column number. Negative value means column from the right side of the terminal.
+# @param    Number  $2      Row number. If empty means current row.
+#*/
+cursor_move() {
     { debug_off; } 2> /dev/null
 
-    if test -z "${1}"; then
-        local msg=$(err_get) 
-        if test -n "${msg}"; then
-            result -m "${msg}" -f red
-        else
-            return 1
+    test -z "${1}" && { debug_on; return 1; } 2> /dev/null
+
+    local col=${1}
+    local row=${2}
+
+    if [[ ${col} =~ ^-?[1-9][0-9]*$ ]]; then
+        if test ${col} -lt 0; then
+            local term_cols=$(tput cols)
+            col=$(($term_cols - ${col/-/}))
         fi
-    elif test "${1:0:1}" == '-'; then
-        result "$@" -f red
-    elif test $# -eq 2; then
-        result -m "${1}" -f red -t "${2}"
     else
-        result -m "${1}" -f red
+        col=0
     fi
 
+
+    if [[ ${row} =~ ^[1-9][0-9]*$ ]]; then
+        _ansi_sequence "${row};${col}H"
+    else
+        _ansi_sequence "${col}G"
+    fi;
+    
     { debug_on; } 2> /dev/null
 }
 
 #/**
-# Print the fatal error message (red color).
-# It terminates the script immediately.
-#
-# @param    String  -m $1       Message to print.
-# @param    String  -t $2       The tag.
+# Move the cursor to the previous line(s).
+# 
+# @param    Number  $1      Number of lines to jump [1].
 #*/
-fatal() {
+cursor_up() {
     { debug_off; } 2> /dev/null
-
-    if test -z "${1}"; then
-        local msg=$(err_get) 
-        if test -n "${msg}"; then
-            textln -m "${msg}" -b RED -f white
-        else
-            return 1
-        fi
-    elif test "${1:0:1}" == '-'; then
-        textln "$@" -b RED -f white
-    elif test $# -eq 2; then
-        textln -m "${1}" -b RED -f white -t "${2}"
-    else
-        textln -m "${1}" -b RED -f white
-    fi
-
+    _ansi_sequence "${1:-1}A"
     { debug_on; } 2> /dev/null
 }
 
 #/**
-# Convert convenient to use sequences to the raw ANSI control sequences.
+# Move the cursor to the next line(s).
+# 
+# @param    Number  $1      Number of lines to jump [1].
+#*/
+cursor_down() {
+    { debug_off; } 2> /dev/null
+    _ansi_sequence "${1:-1}B"
+    { debug_on; } 2> /dev/null
+}
+
+#/**
+# Move the cursor to the previous column(s).
+# 
+# @param    Number  $1      Number of columns to jump [1].
+#*/
+cursor_left() {
+    { debug_off; } 2> /dev/null
+    _ansi_sequence "${1:-1}D"
+    { debug_on; } 2> /dev/null
+}
+
+#/**
+# Move the cursor to the next column(s).
+# 
+# @param    Number  $1      Number of columns to jump [1].
+#*/
+cursor_right() {
+    { debug_off; } 2> /dev/null
+    _ansi_sequence "${1:-1}C"
+    { debug_on; } 2> /dev/null
+}
+
+
+# EXTRA FUNCTIONS
+
+#/**
+# Print formatted text.
+#
+# It converts convenient-to-use sequences into the raw ANSI control sequences.
+# 
 # Supported sequences:
 #           %~              Work directory.
 #           %{nl}           New line.
 #
-#       Clear the linie
-#           ${clb}          Clear the line from the cursor to the beginning.
-#           ${cle}          Clear the line from the cursor to the end.
-#           ${cl}           Clear the whole line.
+#       Clear the line
+#           %{clb}          Clear the line from the cursor to the beginning.
+#           %{cle}          Clear the line from the cursor to the end.
+#           %{cl}           Clear the whole line.
 
-#           ${csb}          Clear the screen from the cursor to the beginning.
-#           ${cse}          Clear the screen from the cursor to the end. 
-#           ${cs}           Clear the whole screen.
+#           %{csb}          Clear the screen from the cursor to the beginning.
+#           %{cse}          Clear the screen from the cursor to the end. 
+#           %{cs}           Clear the whole screen.
 #
 #       Navigate
 #           %{home}         Move the cursor to the 1:1 coordinates.
@@ -837,10 +1162,10 @@ fatal() {
 #
 #       Attributes
 #           %{reset}        Reset all attributes.
-#           %{fgNNN}        Set font color to NNN.
+#           %{fgNNN}        Set font color from 256-color palette.
 #           %{nofg}         Set font color to default.
 #
-#           %{bgNNN}        Set background color to NNN.
+#           %{bgNNN}        Set background color from 256-color palette.
 #           %{nobg}         Set default background color.
 #
 #           %{bold}         Enable text-bold.
@@ -855,7 +1180,7 @@ fatal() {
 #           %{inverse}      Enable reverse colors.
 #           %{noinverse}    Disable reverse colors.
 #
-# @param    String  $1      The text to convert.
+# @param    String  $1      Text to convert.
 # @return   Number          Operation status.
 #*/
 echof() {
@@ -866,7 +1191,7 @@ echof() {
     [[ ${cwd} == ${HOME} ]] && cwd=\~
 
     local line="$(echo "$*" | sed -r 's@%~@'${cwd}'@g;
-                                  s@%\{nl\}@\\e[E@g;
+                                  s@%\{nl\}@\\n@g;
                                   s@%\{home\}@\\e[H@g;
                                   s@%\{move([0-9]*)\}@\\e[\1G@g;
                                   s@%\{goto([0-9]*):([0-9]*)\}@\\e[\1;\2H@g;
@@ -910,95 +1235,31 @@ echof() {
     echo -en "${line}"; } 2> /dev/null
 }
 
-
-# CURSOR.
-
 #/**
-# Move the cursor to the specified coordinates.
-# 
-# @param    Number  $1      Column number. Negative value means column from the right side of the terminal.
-# @param    Number  $2      Row number. If empty means current row.
-#*/
-cursor_move() {
-    { debug_off; } 2> /dev/null
-
-    test -z "${1}" && { debug_on; return 1; } 2> /dev/null
-
-    local col=${1}
-    local row=${2}
-
-    if [[ ${col} =~ ^-?[1-9][0-9]*$ ]]; then
-        if test ${col} -lt 0; then
-            local term_cols=$(tput cols)
-            col=$(($term_cols - ${col/-/}))
-        fi
-    else
-        col=0
-    fi
-
-
-    if [[ ${row} =~ ^[1-9][0-9]*$ ]]; then
-        _ansi_sequence "${col}:${row}H"
-    else
-        _ansi_sequence "${col}G"
-    fi;
-    
-    { debug_on; } 2> /dev/null
-}
-
-#/**
-# Move the cursor to the previous line.
-# 
-# @param    Number  $1      Number of the lines to jump [1].
-#*/
-cursor_up() {
-    { debug_off; } 2> /dev/null
-    _ansi_sequence "${1:-1}A"
-    { debug_on; } 2> /dev/null
-}
-
-#/**
-# Move the cursor to the next line.
-# 
-# @param    Number  $1      Number of the lines to jump [1].
-#*/
-cursor_down() {
-    { debug_off; } 2> /dev/null
-    _ansi_sequence "${1:-1}B"
-    { debug_on; } 2> /dev/null
-}
-
-#/**
-# Move the cursor to the previous column.
-# 
-# @param    Number  $1      Number of the columns to jump [1].
-#*/
-cursor_left() {
-    { debug_off; } 2> /dev/null
-    _ansi_sequence "${1:-1}D"
-    { debug_on; } 2> /dev/null
-}
-
-#/**
-# Move the cursor to the next column.
-# 
-# @param    Number  $1      Number of the columns to jump [1].
-#*/
-cursor_right() {
-    { debug_off; } 2> /dev/null
-    _ansi_sequence "${1:-1}C"
-    { debug_on; } 2> /dev/null
-}
-
-
-# CONTROL SEQUENCES.
-
-#/**
-# Set the output file descriptor to the ANSI control sequences.
+# Set verbose mode for all printing functions like `text()`, `success()`, etc.
 #
-# @param    bool    $1      The file descriptor for the ANSI control sequences.
-#                       1       Redirect to the /dev/stdout (use them).
-#                       !1      Redirect to the /dev/null (skip them).
+# If verbose mode is active, printing functions add extra information before the proper message.
+#
+# @param    $1              Verbose level:
+#               0|-             Disable verbose mode.
+#               t|time          Show time & message.
+#               d|date          Show date & message.
+#               dt|datetime     Show date, time & message.
+#               td|timedate     Show time, date & message.
+#*/
+verbose_mode() {
+    _VERBOSE_MODE=$1
+}
+
+#/**
+# Set the output file descriptor fot the ANSI control sequences.
+#
+# In non-interactive mode, all ANSI sequences are removed automatically. 
+# If you want to do the same in interactive mode you can use this function.
+# 
+# @param    Boolean $1      The file descriptor for the ANSI control sequences.
+#                       1       Redirect to the /dev/stdout (use ANSI sequences).
+#                       !1      Redirect to the /dev/null (skip ANSI sequences).
 #*/
 ansi_state() {
     {
@@ -1008,6 +1269,9 @@ ansi_state() {
         _TERM_COLORS=null
     fi; } 2> /dev/null
 }
+
+
+# PRIVATE HELPERS.
 
 #/**
 # Print an raw ANSI control sequence.
@@ -1021,9 +1285,6 @@ _ansi_sequence() {
         shift 1
     done
 }
-
-
-# COLORS.
 
 #/**
 # Change the font/background color.
@@ -1117,6 +1378,7 @@ _set_color() {
 # It depends on verbose mode.
 #
 # @return                   Generated date/time marker.
+#*/
 _dt() {
     case ${_VERBOSE_MODE} in
         t|time)         echo -n "$(date +'%H:%M:%S') " ;;
@@ -1126,21 +1388,8 @@ _dt() {
     esac
 }
 
-#/**
-# Set verbose mode.
-#
-# @param    $1              Verbose level:
-#               0|-             Show only message.
-#               t|time          Show time & message.
-#               d|date          Show date & message.
-#               dt|datetime     Show date, time & message.
-#               td|timedate     Show time, date & message.
-#*/
-verbose_mode() {
-    _VERBOSE_MODE=$1
-}
 
-# INITIALIZE.
+# INITIALIZE
 
 echo3_init() {
     # Output to the control sequences.

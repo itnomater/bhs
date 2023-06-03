@@ -1,7 +1,7 @@
 #/**
 # DATE & TIME.
 # 
-# The helper functions to print date and time in convenient form.
+# The helper functions to printing date and time.
 #*/
 
 #/**
@@ -12,20 +12,21 @@ function dt_microtime() {
 }
 
 #/**
-# Print the current UNIX timestamp or diff between two timestamps.
+# Print the current UNIX timestamp.
 # 
-# @param    Number  $1      Extra timestamp.
 # @return   Number          Operation status.
 #*/
 function dt_timestamp() {
-    [[ "${1}" =~ ^[0-9]+$ ]] \
-        && echo $(($(printf '%(%s)T') - ${1} - 3600)) \
-        || printf '%(%s)T\n'
+#    [[ "${1}" =~ ^[0-9]+$ ]] \
+#        && echo $(($(printf '%(%s)T') - ${1} - 3600)) \
+#        || printf '%(%s)T\n'
+
+    printf '%(%s)T'
 }
 
 #/**
 # Print the date in the specified format:
-# 1.        YYYY<separator>MM<separator>DD
+# 1.        YYYY{separator}MM{separator}DD
 # 2.        YYYYMMDD
 #
 # @param    Number  -t  $1      The UNIX timestamp for the date. If empty it use the current timestamp.
@@ -67,7 +68,8 @@ function dt_date() {
 
 #/**
 # Print the time in the specified format:
-# 1.        HH<separator>MM<separator>SS
+# 
+# 1.        HH{separator}MM{separator}SS
 # 2.        HHMMSS
 #
 # @param    Number  -t  $1      The UNIX timestamp for the date. If empty it use the current timestamp.
@@ -108,12 +110,13 @@ function dt_time() {
 }
 
 #/**
-# Print the date and hour in specified format:
-# 1.        YYYY<separator1>MM<separator1>DD<separator0>HH<separator2>MM<separator2>SS
+# Print the date and time in specified format:
+# 
+# 1.        YYYY{separator1}MM{separator1}DD{separator0}HH{separator2}MM{separator2}SS
 # 2.        YYYYMMDDHHMMSS
 # 
 # @param    Number  -t  $1      The UNIX timestamp for the date. If empty it use the current timestamp.
-# @param    String  -s  $2      The separator for the fields [ -:]:
+# @param    String  -s  $2      The separators for the fields [ -:]:
 #               0                   The separator for the date and time [ ].
 #               1                   The separator for the date fields [-].
 #               2                   The separator for the time fields [:].
@@ -152,7 +155,7 @@ function dt_datetime() {
     printf "%(%Y${sep:1:1}%m${sep:1:1}%d${sep:0:1}%H${sep:2:1}%M${sep:2:1}%S)T\n" ${tm}
 }
 
-#/**
+#/** [DEPRECATED]
 # Print the date/hour in the predefined: YYYYMMDD_HHMMSS.
 #
 # @param    Number  $1          The UNIX timestamp for the date. If empty it use the current timestamp.
