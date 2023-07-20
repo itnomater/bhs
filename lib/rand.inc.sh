@@ -1,5 +1,11 @@
 #/**
 # Several useful functions to calculating probabilities and generating random numbers.
+#
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
 #*/
 
 #/**

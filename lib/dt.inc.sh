@@ -1,13 +1,17 @@
 #/**
-# DATE & TIME.
-# 
 # The helper functions to printing date and time.
+# 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
 #*/
 
 #/**
 # Print the current UNIX timestamp with microseconds (four digits).
 #*/
-function dt_microtime() {
+dt_microtime() {
     date +%s.%4N
 }
 
@@ -16,7 +20,7 @@ function dt_microtime() {
 # 
 # @return   Number          Operation status.
 #*/
-function dt_timestamp() {
+dt_timestamp() {
 #    [[ "${1}" =~ ^[0-9]+$ ]] \
 #        && echo $(($(printf '%(%s)T') - ${1} - 3600)) \
 #        || printf '%(%s)T\n'
@@ -33,7 +37,7 @@ function dt_timestamp() {
 # @param    String  -s  $2      The separator for the date fields [-].
 #                   -n          Do not use the separator.
 #*/
-function dt_date() {
+dt_date() {
     local tm sep
 
     if test "${1:0:1}" == '-'; then
@@ -76,7 +80,7 @@ function dt_date() {
 # @param    String  -s  $2      The separator for the time fields [:].
 #                   -n          Do not use the separator.
 #*/
-function dt_time() {
+dt_time() {
     local tm sep
 
     if test "${1:0:1}" == '-'; then
@@ -122,7 +126,7 @@ function dt_time() {
 #               2                   The separator for the time fields [:].
 #                   -n          Do not use the separator.
 #*/
-function dt_datetime() {
+dt_datetime() {
     local tm sep
 
     if test "${1:0:1}" == '-'; then
@@ -160,7 +164,7 @@ function dt_datetime() {
 #
 # @param    Number  $1          The UNIX timestamp for the date. If empty it use the current timestamp.
 #*/
-function dt_date_string() {
+dt_date_string() {
     [[ $1 =~ ^[0-9]+$ ]] \
         && printf '%(%Y%m%d_%H%M%S)T\n' ${1} \
         || printf '%(%Y%m%d_%H%M%S)T\n'
@@ -172,7 +176,7 @@ function dt_date_string() {
 # @param    Number  $1          The UNIX timestamp for the first date.
 # @param    Number  $2          The UNIX timestamp for the second date.    
 #*/
-function dt_elapsed() {
+dt_elapsed() {
     local tmbegin=${1} tmend=${2:-$(printf '%(%s)T')} 
 
     if [[ ${tmbegin} =~ ^[1-9][0-9]+$ ]] && [[ ${tmend} =~ ^[1-9][0-9]+$ ]]; then

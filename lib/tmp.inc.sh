@@ -1,6 +1,14 @@
 #/**
-# TEMPORARY FILES.
+# Temporary files.
 # 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+# 
+# ---
+#
 # The temporary files are stored in `${_TMP}/{current_user}` directory. Only current user have access to it. Variable `$_TMP` is declared in the `core` library.
 # 
 # - tmp_rootdir     - Print the temporary root directory path.

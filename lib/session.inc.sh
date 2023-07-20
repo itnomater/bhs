@@ -1,7 +1,13 @@
 #/**
-# SESSIONS
-# 
 # Session mechanism for bash scripts.
+#
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+#
+# ---
 #
 # Sessions allow you to share data between many instances of the same script.
 # Sessions are separated between system users. 
@@ -50,7 +56,7 @@ SESSION_HASH=
 # @param    String  $1          Variable name.
 # @return   Number              Operation status.
 #*/
-function session_exists() {
+session_exists() {
     { debug_off; } 2> /dev/null
 
 #    eval $_SESSION
@@ -78,7 +84,7 @@ function session_exists() {
 # @param    String  $1          Variable name.
 # @param    String  $2          Variable value.
 #*/
-function session_set() {
+session_set() {
     { debug_off; } 2> /dev/null
 
     _session_var_save 'set' $*
@@ -94,7 +100,7 @@ function session_set() {
 # @param    String  $1          Variable name.
 # @param    String  $2          Variable value.
 #*/
-function session_put() {
+session_put() {
     { debug_off; } 2> /dev/null
 
     _session_var_save 'put' $*
@@ -112,7 +118,7 @@ function session_put() {
 # @param    String  $1          Variable name.
 # @param    String  $2          The content to add.
 #*/
-function session_push() {
+session_push() {
     { debug_off; } 2> /dev/null
 
     _session_var_save 'push' $*
@@ -128,7 +134,7 @@ function session_push() {
 # @param    String  $1          Variable name.
 # @param    String  $2          Default value. If the variable does not exist, it will be create using default value.
 #*/
-function session_get() {
+session_get() {
     { debug_off; } 2> /dev/null
 
 #    eval $_SESSION
@@ -180,7 +186,7 @@ function session_get() {
 # 
 # @param    String  $1          Session group name.
 #*/
-function session_list() {
+session_list() {
     { debug_off; } 2> /dev/null
 
     local path=$(_session_var_convert_path ${1})
@@ -194,7 +200,7 @@ function session_list() {
 # 
 # @param    String  $1          Variable name.
 #*/
-function session_delete() {
+session_delete() {
     { debug_off; } 2> /dev/null
 
 #    eval $_SESSION
@@ -243,7 +249,7 @@ function session_delete() {
 # 
 # It is invoked automatically.
 #*/
-function session_init() {
+session_init() {
     { debug_off; } 2> /dev/null
 
     # The root directory for all sessions.
@@ -272,7 +278,7 @@ function session_init() {
 #/** 
 # Print the session root directory.
 #*/
-function session_rootdir() {
+session_rootdir() {
 #    eval $_SESSION
     echo ${SESSION_DIR}
 }
@@ -280,7 +286,7 @@ function session_rootdir() {
 #/** 
 # Print the session name.
 #*/
-function session_name() {
+session_name() {
 #    eval $_SESSION
     echo ${SESSION_NAME}
 }
@@ -288,7 +294,7 @@ function session_name() {
 #/** 
 # Print the session hash.
 #*/
-function session_hash() {
+session_hash() {
 #    eval $_SESSION
     echo ${SESSION_HASH}
 }
@@ -296,7 +302,7 @@ function session_hash() {
 #/** 
 # Delete the entire session directory.
 #*/
-function session_clear() {
+session_clear() {
     { debug_off; } 2> /dev/null
 
     if test -e ${SESSION_DIR}; then
@@ -339,14 +345,14 @@ function session_clear() {
 #/**
 # Get the session rootdir.
 #*/
-function _session_rootdir() {
+_session_rootdir() {
     { echo "${_TMP}/$(/usr/bin/whoami)/sessions"; } 2> /dev/null
 }
 
 #/**
 # Get the session list file path.
 #*/
-function _session_list_path() {
+_session_list_path() {
     { echo $(_session_rootdir)/.list; } 2> /dev/null
 }
 
@@ -355,7 +361,7 @@ function _session_list_path() {
 # 
 # @param    String  $1          Variable name.
 #*/
-function _session_var_init() {
+_session_var_init() {
 #    eval $_SESSION
     {
     test -z "${1}" && return 1
@@ -388,7 +394,7 @@ function _session_var_init() {
 # @param    String  $2          Variable name.
 # @param    String  $3          Data content.
 #*/
-function _session_var_save() {
+_session_var_save() {
 #    eval $_SESSION
     {
     test -z "${2}" \
@@ -429,7 +435,7 @@ function _session_var_save() {
 # 
 # @param    String  $1          Variable name.
 #*/
-function _session_var_convert_path() {
+_session_var_convert_path() {
     {
     test -z "${1}" \
         && return 1 \
@@ -443,7 +449,7 @@ function _session_var_convert_path() {
 # 
 # @param    String  $1          Variable name.
 #*/
-function _session_var_get_path() {
+_session_var_get_path() {
     {
     test -z "${1}" && return 1
     
@@ -457,7 +463,7 @@ function _session_var_get_path() {
 # 
 # @param    String  $1          Variable path.
 #*/
-function _session_var_get_name() {
+_session_var_get_name() {
     {
     test -z "${1}" && return 1
 

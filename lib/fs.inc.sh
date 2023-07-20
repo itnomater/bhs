@@ -1,6 +1,14 @@
 #/**
-# FILES MANAGEMENT.
+# Files management
 # 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+# 
+# ---
+#
 # Helper functions to manage the files and directories. It uses a standard shell commands like: 
 # stat, chmod or build-in test, 
 # but wrapped them in the one interface.
@@ -19,7 +27,7 @@
 #
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_exist() {
+fs_is_exist() {
     test -n "${1}" -a -e "${1}"
 }
 
@@ -28,7 +36,7 @@ function fs_is_exist() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_readable() {
+fs_is_readable() {
     test -n "${1}" -a -r "${1}"
 }
 
@@ -37,7 +45,7 @@ function fs_is_readable() {
 #
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_writable() {
+fs_is_writable() {
     test -n "${1}" -a -w "${1}"
 }
 
@@ -46,7 +54,7 @@ function fs_is_writable() {
 #
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_executable() {
+fs_is_executable() {
     test -n "${1}" -a -x "${1}"
 }
 
@@ -55,7 +63,7 @@ function fs_is_executable() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_dir() {
+fs_is_dir() {
     test -n "${1}" -a -d "${1}"
 }
 
@@ -64,7 +72,7 @@ function fs_is_dir() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_symlink() {
+fs_is_symlink() {
     test -n "${1}" -a -h "${1}"
 }
 
@@ -73,7 +81,7 @@ function fs_is_symlink() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_reg() {
+fs_is_reg() {
     test -n "${1}" -a -f "${1}" 
 }
 
@@ -82,7 +90,7 @@ function fs_is_reg() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_block() {
+fs_is_block() {
     test -n "${1}" -a -b "${1}" 
 }
 
@@ -91,7 +99,7 @@ function fs_is_block() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_character() {
+fs_is_character() {
     test -n "${1}" -a -c "${1}" 
 }
 
@@ -100,7 +108,7 @@ function fs_is_character() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_pipe() {
+fs_is_pipe() {
     test -n "${1}" -a -p "${1}" 
 }
 
@@ -109,7 +117,7 @@ function fs_is_pipe() {
 # 
 # @param    String      $1      Path to the file.
 #*/
-function fs_is_socket() {
+fs_is_socket() {
     test -n "${1}" -a -S "${1}" 
 }
 
@@ -119,7 +127,7 @@ function fs_is_socket() {
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_is_empty() {
+fs_is_empty() {
     local path="${1}"
 
     if fs_is_reg "${path}"; then
@@ -134,12 +142,12 @@ function fs_is_empty() {
 
 
 #/**
-# Is the file encrypt (using openssl + salt)?
+# Is the file encrypted using openssl with salt?
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_is_salted() {
+fs_is_salted() {
     local path="${1}"
     fs_is_reg "${path}" || return $?
 
@@ -148,12 +156,12 @@ function fs_is_salted() {
 }
 
 #/**
-# Is the file compress (using xz tool)?
+# Is the file compressed using xz command?
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_is_compressed() {
+fs_is_compressed() {
     local path="${1}"
     fs_is_reg "${path}" || return $?
 
@@ -163,39 +171,12 @@ function fs_is_compressed() {
 
 
 #/**
-# Generate the MD5 hash of the file.
+# Get the file modification date.
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_md5() {
-    local path="${1}"
-    fs_is_reg "${path}" && md5sum "${path}" | cut -d' ' -f 1 && return 0
-    
-    return 1
-}
-
-#/**
-# Generate the SHA1 hash of the file.
-# 
-# @param    String      $1      Path to the file.
-# @return   Number              Operation status.
-#*/
-function fs_sha1() {
-    local path="${1}"
-    fs_is_reg "${path}" && sha1sum "${path}" | cut -d' ' -f 1 && return 0
-
-    return 1
-}
-
-
-#/**
-# Get file modyfication date.
-# 
-# @param    String      $1      Path to the file.
-# @return   Number              Operation status.
-#*/
-function fs_mdate() {
+fs_mdate() {
     local path="${1}"
     if fs_is_exist "${path}"; then
         local dt=$(stat -c "%y" "${path}")
@@ -208,12 +189,12 @@ function fs_mdate() {
 }
 
 #/**
-# Get file modyfication time.
+# Get the file modification time.
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_mtime() {
+fs_mtime() {
     local path="${1}"
     if fs_is_exist "${path}"; then
         local dt=$(stat -c "%y" "${path}")
@@ -227,12 +208,12 @@ function fs_mtime() {
 }
 
 #/**
-# Get file modyfication full date (date + time).
+# Get the file modification full date (date + time).
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_mdatetime() {
+fs_mdatetime() {
     local path="${1}"
     if fs_is_exist "${path}"; then
         local dt=$(stat -c "%y" "${path}")
@@ -245,12 +226,12 @@ function fs_mdatetime() {
 }
 
 #/**
-# Get file modyfication UNIX timestamp.
+# Get the file modification UNIX timestamp.
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_mtimestamp() {
+fs_mtimestamp() {
     local path="${1}"
     if fs_is_exist "${path}"; then
         stat -c "%Y" "${path}"
@@ -262,12 +243,12 @@ function fs_mtimestamp() {
 }
 
 #/**
-# Get file permissions (in octal).
+# Get the file permissions (in octal).
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_perm() {
+fs_perm() {
     local path="${1}"
     if fs_is_exist "${path}"; then
         stat -c "%a" "${path}" 
@@ -279,19 +260,19 @@ function fs_perm() {
 }
 
 #/**
-# Get file size (in bytes).
+# Get the file size (in bytes).
 # 
 # @param    String  -p  $1      Path to the file.
 # @param    String      $2      Output format (suffixes).
-#                       <null>          Size in bytes (no suffix).
+#                       {null}          Size in bytes (no suffix).
 #                   -b      B|b         Size in bytes.
 #                   -k      K|KB|kb     Size in kilobytes.
 #                   -m      M|MB|mb     Size in megabytes.
 #                   -g      G|GB|gb     Size in gigabytes.
-#                   -s      *           The suffix is adjusted dynamically.
+#                   -a      a           The suffix is adjusted dynamically.
 # @return   Number              Operation status.
 #*/
-function fs_size() {
+fs_size() {
     declare -i size
     local path= suffix=
     if test "${1:0:1}" == '-'; then
@@ -317,7 +298,7 @@ function fs_size() {
                     suffix='g'
                     shift 1 ;;
 
-                -s|--suffix)
+                -a|--adjust)
                     suffix='a'
                     shift 1 ;;
                     
@@ -338,6 +319,22 @@ function fs_size() {
 }
 
 #/**
+# Does the file system support permissions?
+# 
+# @param    String      $1      Path to the directory.
+# @return   Number              Operation status.
+#*/
+fs_is_support_permissions() {
+    local test_fpath="${1}/.perm"
+    touch "${test_fpath}" 2> /dev/null
+    chmod 777 "${test_fpath}" 2> /dev/null
+    local stat=$?
+    test -e "${test_fpath}" && unlink "${test_fpath}" 2> /dev/null
+    return ${stat}
+}
+
+
+#/**
 # Convert file size in bytes to human-readable.
 # 
 # @param    String  -s  $1      Size in bytes.
@@ -349,7 +346,7 @@ function fs_size() {
 #                   -g      G|GB|gb     Size in gigabytes.
 # @return   Number              Operation status.
 #*/
-function _fs_convert_size() {
+_fs_convert_size() {
     declare -i size
     local suffix=a
     if test "${1:0:1}" == '-'; then
@@ -402,14 +399,17 @@ function _fs_convert_size() {
 
     case ${suffix} in
         g)  sizex=$(echo "scale=2; ${size} / 1024 / 1024 / 1024" | bc -l)
+            test "${sizex}" = '0' && sizex='0.00'
             test "${sizex:0:1}" == '.' && sizex="0${sizex}G" || sizex+='G'
             ;;
 
         m)  sizex=$(echo "scale=2; ${size} / 1024 / 1024" | bc -l)
+            test "${sizex}" = '0' && sizex='0.00'
             test "${sizex:0:1}" == '.' && sizex="0${sizex}M" || sizex+='M'
             ;;
 
         k)  sizex=$(echo "scale=2; ${size} / 1024" | bc -l)
+            test "${sizex}" = '0' && sizex='0.00'
             test "${sizex:0:1}" == '.' && sizex="0${sizex}K" || sizex+='K'
             ;;
 
@@ -425,39 +425,40 @@ function _fs_convert_size() {
 
 
 #/**
-# Set file permissions.
+# Set the file permissions.
 # 
 # @param    String      $1      New file permissions (in octal).
 # @param    String      $2      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_chmod() {
+fs_chmod() {
     ! fs_is_exist "${2}" && return 1
     
     chmod "${1}" "${2}" 2> /dev/null
 }
 
 #/**
-# Set file modyfication time.
+# Set the file modification time.
 # 
 # @param    String      $1      Modification time.
 # @param    String      $2      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_set_mtimestamp() {
+fs_set_mtimestamp() {
     ! fs_is_exist "${2}" && return 1
     
     touch -m -d @${1} "${2}" 2> /dev/null
 }
 
 
-#/**
+#/** [EXPERIMENTAL]
 # Remove the whole directory. It is too dangerous, so I don't want use it.
+# 
 # 
 # @param    String      $1      Path to the directory.
 # @return   Number              Operation status.
 #*/
-#function dir_remove() {
+#dir_remove() {
 #    fs_is_dir "${1}"
 #    test $? -eq 0 && rm -fr "${1}"
 #}
@@ -465,18 +466,18 @@ function fs_set_mtimestamp() {
 #/**
 # Make a symbolic link to the file.
 # 
-# @param    String      $1      Name of the symbolic link.
-# @param    String      $2      Path to the source file.
+# @param    String      $1      Path to the source file.
+# @param    String      $2      Path/name of the symbolic link.
 # @return   Number              Operation status.
 #*/
-function fs_mksym() {
+fs_mksym() {
     local src="${1}"
     local dst="${2}"
 
     test -z "${src}" && return 1
     test -z "${dst}" && return 2
 
-#    ! fs_is_exist "${src}" && return 3
+    ! fs_is_exist "${src}" && return 3
 
     fs_is_symlink "${dst}" && unlink "${dst}" 
 
@@ -484,41 +485,26 @@ function fs_mksym() {
 }
 
 #/**
-# Does the file system support permissions?
+# Make a directory (if doesn't exist only).
 # 
 # @param    String      $1      Path to the directory.
 # @return   Number              Operation status.
 #*/
-function fs_is_support_permissions() {
-    local test_fpath="${1}/.perm"
-    touch "${test_fpath}" 2> /dev/null
-    chmod 777 "${test_fpath}" 2> /dev/null
-    local stat=$?
-    test -e "${test_fpath}" && unlink "${test_fpath}" 2> /dev/null
-    return ${stat}
-}
-
-#/**
-# Create the directory (if doesn't exist).
-# 
-# @param    String      $1      Path to the directory.
-# @return   Number              Operation status.
-#*/
-function fs_mkdir() {
+fs_mkdir() {
     ! test -e "${1}" && mkdir -p "${1}" 2> /dev/null
 }
 
 #/**
-# Remove the directory (if isn't empty).
+# Remove the directory (if is empty only).
 # 
 # @param    String      $1      Path to the directory.
 # @return   Number              Operation status.
 #*/
-function fs_rmdir() {
+fs_rmdir() {
     ! test -d "${1}" && return 1
     test $(ls -a "${1}" | wc -l) -ne 2 && return 2
 
-    rmdir -p "${1}" 2> /dev/null
+    rmdir "${1}" 2> /dev/null
 }
 
 #/**
@@ -527,36 +513,36 @@ function fs_rmdir() {
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_unlink() {
+fs_unlink() {
     ! fs_is_exist "${1}" && return 1
     fs_is_dir "${1}" && ! fs_is_symlink "${1}" && return 2
     
     unlink "${1}" 2> /dev/null
 }
 
-#/**
+#/** [DEPRECATED]
 # Rename the file path to lowercase.
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_tolower() {
+fs_tolower() {
     local fpath="$*"
     fs_is_exist "${fpath}" && mv "${fpath}" "${fpath,,}" || return 1
 }
 
-#/**
+#/** [DEPRECATED]
 # Rename the file path to uppercase.
 # 
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_toupper() {
+fs_toupper() {
     local fpath="$*"
     fs_is_exist "${fpath}" && mv "${fpath}" "${fpath^^}" || return 1
 }
 
-#/**
+#/** [DEPRECATED]
 # Strip the file path to specified length.
 # 
 # When the path is shorten than 12 characters show all.
@@ -565,7 +551,7 @@ function fs_toupper() {
 # @param    String      $1      Path to the file.
 # @return   Number              Operation status.
 #*/
-function fs_strip_path() {
+fs_strip_path() {
     full="${1}"
     length=${#full}
 
@@ -591,5 +577,32 @@ function fs_strip_path() {
             fi
         )
     fi
+}
+
+
+#/**
+# Generate the MD5 hash of the file.
+# 
+# @param    String      $1      Path to the file.
+# @return   Number              Operation status.
+#*/
+fs_md5() {
+    local path="${1}"
+    fs_is_reg "${path}" && md5sum "${path}" | cut -d' ' -f 1 && return 0
+    
+    return 1
+}
+
+#/**
+# Generate the SHA1 hash of the file.
+# 
+# @param    String      $1      Path to the file.
+# @return   Number              Operation status.
+#*/
+fs_sha1() {
+    local path="${1}"
+    fs_is_reg "${path}" && sha1sum "${path}" | cut -d' ' -f 1 && return 0
+
+    return 1
 }
 

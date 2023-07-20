@@ -1,10 +1,16 @@
 #/**
-# CONFIGURATION MANAGEMENT
-#
 # Easy-to-use configuration management of bash scripts.
 # 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+#
+# ---
+#
 # Separate code from configuration. No more global variables in your bash scripts. All configuration are stored in dedicated config files.
-
+#
 ## Functions
 # You can use the following functions:
 #
@@ -16,7 +22,7 @@
 # - conf_clear          - Remove (clear) the configuration variable.
 # - conf_size           - Print number of the variables in specified configuration section.
 # - conf_keys           - Print all section keys.
-
+#
 ## Configuration file structure
 #
 # The configuration structure is very simple. There are pairs _key=value_. 
@@ -42,7 +48,7 @@
 # #[section2]
 # key1=val1
 # ---
-
+#
 ## Loading the library
 # 
 # After loading this library, the function `conf_init` will be called automatically with the proper script name as an argument.
@@ -67,7 +73,7 @@
 # conf_load '/path/to/configfile'
 # ---
 # 
-
+#
 ## Under the hood
 # 
 # The configuration variables are split into sections. 
@@ -102,7 +108,7 @@
 # @param    String  $3      Namespace of the configuration set. [CONF]
 # @return   Number          Operation status.
 #*/
-function conf_load() {
+conf_load() {
     {
     local fpath=${1} section=${2} prefix=${3}
 
@@ -188,10 +194,10 @@ EOF
 # Check if the configuration variable exist.
 #
 # @param    String  $1      Configuration variable name in format: [section:]key.
-# @param    String  $2      Prefix of the global environment variable name, see the `conf library description` and `conf_load` function. If you don't need extra prefixes with `conf_load()` function then skip this."
+# @param    String  $2      Prefix of the global environment variable name, see the `conf library description` and `conf_load()` function. If you don't need extra prefixes with `conf_load()` function then skip this."
 # @return   Number          Operation status.
 #*/
-function conf_is() {
+conf_is() {
     { 
     test "${1}" = '' && return 1
 
@@ -225,7 +231,7 @@ function conf_is() {
 #                           If you use the namespace with `conf_load()` you need to add '@' character before it. Otherwise just skip it.
 # @return   Number          Operation status.
 #*/
-function conf_get() {
+conf_get() {
     {
     local var=$1
     local args=()
@@ -269,7 +275,7 @@ function conf_get() {
 # @param    String  $3      Configuration namespace, see the `conf library description` and `conf_load()` function for details. If you don't need multiple configuration sets then skip this."
 # @return   Number          Status operacji.
 #*/
-function conf_set() {
+conf_set() {
     {
     test -z "${1}" && return 1
 
@@ -314,10 +320,10 @@ function conf_set() {
 #
 # @param    String  $1      Configuration variable name in format: [section:]key.
 # @param    String  $2      The new content to add to the configuration variable.
-# @param    String  $3      Prefix for the global environment variable name, see the conf_load() function. If you don't use extra prefixes with conf_load() then skip this.
+# @param    String  $3      Prefix for the global environment variable name, see the `conf_load()` function. If you don't use extra prefixes with conf_load() then skip this.
 # @return   Number          Operation status.
 #*/
-function conf_add() {
+conf_add() {
     {
     local curr=$(conf_get "$1" "$3")
     curr+=$2
@@ -331,7 +337,7 @@ function conf_add() {
 # @param    String  $2      Prefix for the global environment variable name, see the `conf library` and `conf_load`. If you don't need extra prefixes with `conf_load()` function then skip this.
 # @return   Number          Operation status.
 #*/
-function conf_clear() {
+conf_clear() {
     { conf_set "$1" '' "$2"; } 2> /dev/null
 }
 
@@ -339,10 +345,10 @@ function conf_clear() {
 # [DEPRECATED] Print number of the variables in specified configuration section.
 #
 # @param    String  $1      Section name [DEFAULT].
-# @param    String  $2      Prefix for the global environment variable name, see the conf_load() function. If you don't use extra prefixes with conf_load() then skip this.
+# @param    String  $2      Prefix for the global environment variable name, see the `conf_load()` function. If you don't use extra prefixes with conf_load() then skip this.
 # @return   Number          Operation status.
 #*/
-function conf_size() {
+conf_size() {
     {
     local section="${1}"
     local prefix="${2}"
@@ -361,10 +367,10 @@ function conf_size() {
 # [DEPRECATED] Print all section keys.
 #
 # @param    String  $1      Section name [DEFAULT].
-# @param    String  $2      Prefix for the global environment variable name, see the conf_load() function. If you don't use extra prefixes with conf_load() then skip this.
+# @param    String  $2      Prefix for the global environment variable name, see the `conf_load()` function. If you don't use extra prefixes with conf_load() then skip this.
 # @return   Number          Operation status.
 #*/
-function conf_keys() {
+conf_keys() {
     {
     local section="${1}"
     local prefix="${2}"
@@ -383,7 +389,7 @@ function conf_keys() {
 #/**
 # Initialize the library.
 #*/
-function conf_init() {
+conf_init() {
     local conf_fpath=${SHELL_CONFDIR}/${1}.conf.ini
     test -f ${conf_fpath} && conf_load ${conf_fpath}
 
@@ -397,10 +403,10 @@ function conf_init() {
 # Print the configuration variable value.
 #
 # @param    String  $1      Configuration variable name in format: [section:]key.
-# @param    String  $2      Prefix for the global environment variable name, see the conf_load() function. If you don't use extra prefixes with conf_load() then skip this.
+# @param    String  $2      Prefix for the global environment variable name, see the `conf_load()` function. If you don't use extra prefixes with conf_load() then skip this.
 # @return   Number          Operation status.
 #*/
-function _conf_get() {
+_conf_get() {
     test "${1}" = '' && return 1
 
     local section key prefix="${2}"
@@ -429,7 +435,7 @@ function _conf_get() {
 # 
 # @param    String  $*      Input data.
 #*/
-function _conf_line_parse() {
+_conf_line_parse() {
     local rawdata="$*"
     local var=
 

@@ -1,13 +1,25 @@
 #/**
 # Helper functions to control the audio. 
-#*/
+# 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+# 
+# It is a wrapper for amixer shell command.
+#/
 
-audio_init() {
-    which amixer > /dev/null && return 0 || return 1
+audio_user_commands() {
+    echo amixer
 }
 
+#    audio_init() {
+#    which amixer > /dev/null && return 0 || return 1
+#}
+
 #/**
-# Set the audio volume level.
+# Set audio volume level.
 #
 # @param    $1      Audio volume level in percent.
 #*/
@@ -20,7 +32,7 @@ audio_set() {
 }
 
 #/**
-# Get the audio volume level.
+# Get audio volume level.
 #
 # @return           Audio volume level in percent.
 #*/
@@ -29,29 +41,29 @@ audio_get() {
 }
 
 #/**
-# Increase the audio volume level.
+# Increase audio volume level.
 #
-# @param    $1      The value to increase the audio volume in percent.
+# @param    $1      Percentage of audio volume level to increase.
 #*/
 audio_up() {
-    local vol=${1:-0}
+    local vol=${1:-1}
     [[ ${vol} =~ ^[0-9]+$ ]] || return 1
     test ${vol} -lt 0 -o ${vol} -gt 100 && return 2
 
-    amixer -q set Master,0 ${1}%+
+    amixer -q set Master,0 ${vol}%+
 }
 
 #/**
 # Decrease the audio volume level.
 #
-# @param    $1      The value to decrease the audio volume in percent.
+# @param    $1      Percentage of audio volume level to decrease.
 #*/
 audio_down() {
-    local vol=${1:-0}
+    local vol=${1:-1}
     [[ ${vol} =~ ^[0-9]+$ ]] || return 1
     test ${vol} -lt 0 -o ${vol} -gt 100 && return 2
 
-    amixer -q set Master,0 ${1}%-
+    amixer -q set Master,0 ${vol}%-
 }
 
 #/**
@@ -69,14 +81,14 @@ audio_unmute() {
 }
 
 #/**
-# Toggle the audio mute state.
+# Toggle audio muted state.
 #*/
 audio_toggle() {
     amixer set Master,0 toggle > /dev/null
 }
 
 #/**
-# Check the audio mute state.
+# Check audio muted state.
 # 
 # @return       Mute state:
 #                   0   - muted.

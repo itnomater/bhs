@@ -1,5 +1,13 @@
 #/**
-# LANGUAGE MANAGEMENT.
+# Language management.
+# 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+#
+# ---
 #
 # The interface for managing the language data in bash scripts.
 #
@@ -52,7 +60,7 @@
 # @param    String  $1      The language file name. You can pass the absolute path to the file or only the name.
 # @param    String  $2      The section name [DEFAULT].
 # @return   Number          Operation status.
-function lang_load() {
+lang_load() {
     { 
     local lang_source=${1}
     local section=${2}
@@ -63,12 +71,10 @@ function lang_load() {
     fi
 
     local lang_fpath=${lang_source}
-    if ! test -f "${lang_fpath}"; then
-        local lang_def=${LC_MESSAGES:-default}
-        local lang_fpath=${SHELL_LANGDIR}/${lang_def}/${lang_source/.*/}.lang.ini
-    fi
-
+    ! test -f "${lang_fpath}" && lang_fpath=${SHELL_LANGDIR}/${LC_MESSAGES}/${lang_source/.*/}.lang.ini
+    ! test -f "${lang_fpath}" && lang_fpath=${SHELL_LANGDIR}/default/${lang_source/.*/}.lang.ini
     ! test -f "${lang_fpath}" && lang_fpath=${lang_source}.lang.ini
+
     if ! test -f "${lang_fpath}"; then
         echo "No lang file ${lang_fpath}"
         return 2
@@ -97,7 +103,7 @@ function lang_load() {
 # @param    String  $2+     Extra parameters for the language variable.
 # @return   Number          Operation status.
 #*/
-function lang_get() {
+lang_get() {
     {
     if conf_is "$1" '@LANG'; then
         conf_get "$@" '@LANG'
@@ -114,7 +120,7 @@ function lang_get() {
 # @param    String  $2      The language variable value.
 # @return   Number          Operation status.
 #*/
-function lang_set() {
+lang_set() {
     {
     conf_set "$1" "$2" '@LANG'
     local ret=$?
@@ -128,26 +134,26 @@ function lang_set() {
 #/**
 # Wrapper for the `lang_get()` function.
 #*/
-function @() {
+@() {
     { lang_get $*; } 2> /dev/null
 }
 
 #/**
 # Initialize the library.
 #*/
-function lang_init() {
+lang_init() {
     {
     lib conf 
 
     test -n "${1}" && lang_load "${1}"
     
-    local lang_def=${LC_MESSAGES:-default}
-    
-    local lang_fpath=${SHELL_LANGDIR}/${lang_def}/core.lang.ini 
+    local lang_fpath=${SHELL_LANGDIR}/${LC_MESSAGES}/core.lang.ini 
     test -f ${lang_fpath} && lang_load ${lang_fpath}
 
     if test "${1}" != ''; then
-        local lang_fpath=${SHELL_LANGDIR}/${lang_def}/${1/.*/}.lang.ini
+        lang_fpath=${SHELL_LANGDIR}/${LC_MESSAGES}/${1/.*/}.lang.ini
+        ! test -f ${lang_fpath} && lang_fpath=${SHELL_LANGDIR}/default/${1/.*/}.lang.ini
+
         test -f ${lang_fpath} && lang_load ${lang_fpath}
     fi
         

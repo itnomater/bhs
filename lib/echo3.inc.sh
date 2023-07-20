@@ -1,52 +1,60 @@
 #/**
 # Helper functions for input data from user, printing messages and cursor management.
 # 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+#
+# ---
+#
 # These functions can be divided into several categories.
-
-##### Basic text printing
+#
+## Basic text printing
 # 
 # text  - Print text (also with color options) in a specified position. No break line at the end.
 # textln  - Works as above but adds a newline character at the end.
 # line  - Print the full-width separator line.
 # header  - Print the header.
-
-##### Print an action status message
+#
+## Print an action status message
 # 
 # success  - Print success message (green color).
 # info  - Print information message (blue color).
 # warning  - Print warning message (yellow color).
 # error  - Print error message (red color).
 # fatal  - Print fatal error message (red color).
-
-##### Print the progress and results of the actions
+#
+## Print the progress and results of the actions
 # 
 # progress  - Print the progress (step) of the action.
 # result  - Print the result of the action.
-
-##### Getting information from the user
+#
+## Getting information from the user
 # 
 # confirm  - Confirm the action execution. 
 # input  - Get information from the user.
 # password  - Get the password from the user.
-
-##### Cursor management
+#
+## Cursor management
 # 
 # cursor\_move  - Move the cursor to the specified coordinates.
 # cursor\_up  - Move the cursor to the previous line(s).
 # cursor\_down  - Move the cursor to the next line(s).
 # cursor\_left  - Move the cursor to the previous column(s).
 # cursor\_right  - Move the cursor to the next column(s).
-
-##### Extra functions
+#
+## Extra functions
 # echof  - Print formatted text.
 # verbose\_mode  - Set verbose mode.
 # ansi\_state  - Set the output file descriptor for the ANSI control sequences.
-
-#### Colors
+#
+## Colors
 # 
 # Defined colors for printing functions.
-
-##### Dark variants of the colors
+#
+## Dark variants of the colors
 # 
 # - black
 # - red
@@ -56,8 +64,8 @@
 # - purple
 # - cyan
 # - white
-
-##### Light variants of the colors
+#
+## Light variants of the colors
 # 
 # - BLACK
 # - RED
@@ -67,8 +75,8 @@
 # - PURPLE
 # - CYAN
 # - WHITE
-
-##### ANSI Sequences
+#
+## ANSI Sequences
 # 
 # ANSI sequences are used by [echof](/bhs/lib/echo3/echof) function:
 # 
@@ -836,7 +844,8 @@ result() {
     local type=$(scrmethod)
     
     # The script is running by user - print information to the standard output.
-    if test "${type}" = 'user'; then
+#    if test "${type}" = 'user'; then
+    if test -t; then
         _ansi_sequence '0G' '2K'
         if test "${1:0:1}" = '-'; then
             textln "$@" -p '> '

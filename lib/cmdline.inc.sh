@@ -1,7 +1,13 @@
 #/**
-# COMMAND LINE.
-#
 # Manage the command line arguments and options.
+#
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+# 
+# ---
 #
 # There are 3 functions mainly using functions to manage command line options:
 # 
@@ -132,7 +138,7 @@ opt_lt() {
 #/**
 # Check if the command line option exists and its value is lower than or equal to $2.
 #
-# See the opt_is function for more information.
+# See the `opt_is()` function for more information.
 #
 # @param    String  $1      Option to check.
 # @param    Number  $2      Value to compare.

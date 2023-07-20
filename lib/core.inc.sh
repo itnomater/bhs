@@ -1,9 +1,18 @@
+#/**
+# The core library for the Bash Helpers System.
+# 
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+#*/
 { 
     # Include this script only once.
     test -n "${_CORE_IS_INIT}" && return 0 || _CORE_IS_INIT=1
 
     # Make sure that the environment variables are set.
-    source ~/.config/shell/variables.inc.sh
+    test -f ~/.myconfig/shell/variables.inc.sh && source ~/.myconfig/shell/variables.inc.sh
 
     # Save the current directory path in heper variable. 
     # If you use the `cd` command in your script, $_CWD is always indicates to the start work directory.

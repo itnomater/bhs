@@ -1,10 +1,21 @@
 #/**
-# Generate a text based progress bar using UTF8 characters. 
-# You can generate a vertical bar (one character) or horizontal bar (20 characters).
+# Draw a text based progress bars using UTF8 characters. 
+#
+# Project:          Bash Helper System
+# Documentation:    https://itnomater.github.io/bhs/
+# Source:           https://github.com/itnomater/bhs
+# Licence:          GPL 3.0
+# Author:           itnomater <itnomater@gmail.com>
+# 
+# ---
+#
+# Draw a text based progress bars using UTF8 characters. 
+# Progress bars can be drawn vertically (one character) or horizontally (20 characters).
+# They may contain frames and may be colored.
 #*/
 
 #/**
-# Draw the horizontal progress bar.
+# Draw a horizontal progress bar.
 #
 # Example:
 #   echo "30%: $(bar_draw_horizontal 30)"       # 30% [██████              ]
@@ -17,7 +28,7 @@
 #               nocolor|false|0       Do not use a color.
 #               *                     Use a color.
 #*/
-function bar_draw_horizontal() {
+bar_draw_horizontal() {
     #             0  1 2 3 4 5
     local HBARS=(' ' ▎ ▍ ▋ ▊ █)
 
@@ -68,7 +79,7 @@ function bar_draw_horizontal() {
 }
 
 #/**
-# Draw the vertical progress bar.
+# Draw a vertical progress bar.
 #
 # Example:
 #   echo "30%: $(bar_draw_vertical 30)"         # 30%: [▂]
@@ -81,7 +92,7 @@ function bar_draw_horizontal() {
 #               nocolor|false|0       Do not use a color.
 #               *                     Use a color.
 #*/
-function bar_draw_vertical() {
+bar_draw_vertical() {
     local val=${1%%.*}
     [[ ${val} =~ ^[0-9]+$ ]] || val=0
     test ${val} -lt 0 && val=0
@@ -123,7 +134,7 @@ function bar_draw_vertical() {
 # 
 # @param    $1          The level progress from the range: <0-100>.
 #*/
-function bar_get_index() {
+bar_get_index() {
     #                     0    5  10   15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  100%
     #                     0    1  2    3    4    5    6    7    8    9    10   11   12   13   14   15   16   17   18   19  20
     local SCOPES=(       \     5  10   15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  101)
@@ -148,7 +159,7 @@ function bar_get_index() {
 # 
 # @param    $1          The index of the BARS array element from the range: <1-20>.
 #*/
-function bar_get_symbol() {
+bar_get_symbol() {
     #                     0    5   10   15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  100%
     #                     0    1   2    3    4    5    6    7    8    9    10   11   12   13   14   15   16   17   18   19  20
     local BARS=(         \    \    ▁    ▁    ▁    ▂    ▂    ▂    ▃    ▃    ▄    ▄    ▅    ▅    ▅    ▅    ▆    ▆    ▆    ▇    █)
@@ -177,7 +188,7 @@ function bar_get_symbol() {
 #               json        Use hexdecimal color format.
 #               *           Use the color number for 256-terminal.
 #*/
-function bar_get_color() {
+bar_get_color() {
     #                    0    5   10   15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  100%
     #                    0    1   2    3    4    5    6    7    8    9    10   11   12   13   14   15   16   17   18   19  20
     local COLORS=(       \    51  51   82   46   46   154  190  190  226  226  220  220  214  208  208  202  196  196  124 124)
@@ -202,7 +213,7 @@ function bar_get_color() {
 #               json        Use hexdecimal color format.
 #               *           Use the color number for 256-terminal.
 #*/
-function bar_get_inv_color() {
+bar_get_inv_color() {
     #                    0     5  10   15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  100%
     local INVCOLORS=(    \   123 124  196  196  202  208  208  214  220  220  226  226  190  190  154   46   46   82   51   51)
     local i=${1:-0}
@@ -215,11 +226,11 @@ function bar_get_inv_color() {
 }
 
 #/**
-# Convert color from 256-terminal value to HEX value.
+# Convert color from 256-terminal value to HEX value. Color values are hardcoded.
 # 
 # @param    Number  $1      The color number in 256-terminal value.
 #*/
-function bar_get_hex_color() {
+bar_get_hex_color() {
     case ${1} in
         123)   echo '87ffff' ;;
         124)   echo 'af0000' ;;
