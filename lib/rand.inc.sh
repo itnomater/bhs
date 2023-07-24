@@ -92,6 +92,21 @@ rand_digits() {
 }
 
 #/**
+# Generate a random string of characters.
+# 
+# @param    Number  $1      String length.
+#*/
+rand_string() {
+    local max
+
+    [[ ${1} =~ ^[1-9][0-9]*$ ]] \
+        && max=${1} \
+        || max=8
+
+    dd if=/dev/urandom bs=${max} count=1 2> /dev/null | md5sum | cut -c 1-${max}
+}
+
+#/**
 # Convert a value to integer.
 #
 # @param    $1      Source value.
