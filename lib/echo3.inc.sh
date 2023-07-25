@@ -1230,7 +1230,9 @@ echof() {
                                   s@%\{(no)?bg\}@\\e[49m@g;
 
                                   s@%\{bold\}@\\e[1m@g;
-                                  s@%\{nobold\}@\\e[21m@g;
+                                  s@%\{nobold\}@\\e[22m@g;
+
+                                  s@%\{italic\}@\\e[3m@g;
 
                                   s@%\{underline\}@\\e[4m@g;
                                   s@%\{nounderline\}@\\e[24m@g;
