@@ -36,7 +36,7 @@ bar_draw_horizontal() {
     [[ ${val} =~ ^[0-9]+$ ]] || val=0
     test ${val} -lt 0 && val=0
     test ${val} -gt 100 && val=100
-    
+
     local use_frame=1
     case ${2} in
         noframe|false|0)    
@@ -62,7 +62,7 @@ bar_draw_horizontal() {
         echo -n "${HBARS[5]}"
         ((num--))
     done
-    
+
     if test ${max} -ne 0; then
         echo -n "${HBARS[${ext}]}"
 
